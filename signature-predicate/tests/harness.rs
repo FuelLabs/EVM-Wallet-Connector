@@ -3,8 +3,10 @@ use fuels::{
     accounts::predicate::Predicate,
     prelude::*,
     types::{
+        input::Input,
         transaction_builders::{ScriptTransactionBuilder, TransactionBuilder},
-        Bits256, EvmAddress,
+        unresolved_bytes::UnresolvedBytes,
+        Bits256, EvmAddress, coin_type::CoinType,
     },
 };
 
@@ -54,16 +56,51 @@ async fn testing() {
     let witness_index = 0;
     let configurables = MyPredicateConfigurables::new().set_SIGNER(evm_address);
 
-    // TODO: how do I attach a predicate to a Tx?
+    // Create a predicate
     let predicate = Predicate::load_from(PREDICATE_BINARY_PATH)
         .unwrap()
         .with_provider(fuel_wallet.provider().unwrap().clone())
         .with_configurables(configurables)
         .with_data(MyPredicateEncoder::encode_data(witness_index));
 
+    // TODO: Why is this forced? I'd like to remove it
+    fuel_wallet
+        .transfer(
+            &predicate.address().clone(),
+            1,
+            AssetId::default(),
+            TxParameters::default(),
+        )
+        .await
+        .unwrap();
+
+    // Create input predicate
+    let predicate_coin = &fuel_wallet.provider().unwrap()
+        .get_spendable_resources(ResourceFilter {
+            from: predicate.address().clone(),
+            asset_id: AssetId::default(),
+            amount: 1,
+            ..Default::default()
+        })
+        .await
+        .unwrap()[0];
+
+    let input_predicate = match predicate_coin {
+        CoinType::Coin(_) => Input::resource_predicate(
+            predicate_coin.clone(),
+            predicate.code().clone(),
+            UnresolvedBytes::default(),
+        ),
+        _ => panic!("Predicate coin resource type does not match"),
+    };
+
+    let mut inputs = vec![input_predicate];
+    inputs.extend(wallet_coins);
+
     // Create the Tx
     let mut tx = ScriptTransactionBuilder::default()
-        .set_inputs(wallet_coins)
+        .set_inputs(inputs)
+        .set_consensus_parameters(fuel_wallet.provider().unwrap().consensus_parameters())
         .build()
         .unwrap();
 
@@ -76,6 +113,7 @@ async fn testing() {
     // Then we add in the signed data for the witness
     tx.witnesses_mut().push(Witness::from(signed_tx.to_vec()));
 
+    // TODO: predicate fails to validate despite it always returning true so the setup must be incorrect here
     // Execute the Tx
     let response = fuel_wallet
         .provider()
