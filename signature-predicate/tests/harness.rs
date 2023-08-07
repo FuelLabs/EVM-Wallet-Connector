@@ -1,7 +1,7 @@
 use fuel_tx::Witness;
 use fuels::{
     accounts::predicate::Predicate,
-    prelude::*,
+    prelude::{*, Signer},
     types::{
         input::Input,
         transaction_builders::{ScriptTransactionBuilder, TransactionBuilder},
@@ -11,7 +11,7 @@ use fuels::{
 };
 
 use ethers_core::{k256::ecdsa::SigningKey, rand::thread_rng};
-use ethers_signers::{LocalWallet, Signer, Wallet};
+use ethers_signers::{LocalWallet, Signer as EthSigner, Wallet};
 
 const PREDICATE_BINARY_PATH: &str = "./out/debug/signature-predicate.bin";
 
@@ -53,15 +53,15 @@ async fn testing() {
     let evm_address = EvmAddress::from(Bits256(padded_eth_address));
 
     // Create the predicate by setting the signer and pass in the witness argument
-    let witness_index = 0;
+    let witness_index = 1;
     let configurables = MyPredicateConfigurables::new().set_SIGNER(evm_address);
 
     // Create a predicate
     let predicate = Predicate::load_from(PREDICATE_BINARY_PATH)
         .unwrap()
         .with_provider(fuel_wallet.provider().unwrap().clone())
-        .with_configurables(configurables)
-        .with_data(MyPredicateEncoder::encode_data(witness_index));
+        .with_configurables(configurables);
+        // .with_data(MyPredicateEncoder::encode_data(witness_index));
 
     // TODO: Why is this forced? I'd like to remove it
     fuel_wallet
@@ -89,7 +89,7 @@ async fn testing() {
         CoinType::Coin(_) => Input::resource_predicate(
             predicate_coin.clone(),
             predicate.code().clone(),
-            UnresolvedBytes::default(),
+            MyPredicateEncoder::encode_data(witness_index),
         ),
         _ => panic!("Predicate coin resource type does not match"),
     };
@@ -103,6 +103,7 @@ async fn testing() {
         .set_consensus_parameters(fuel_wallet.provider().unwrap().consensus_parameters())
         .build()
         .unwrap();
+    fuel_wallet.sign_transaction(&mut tx).unwrap();
 
     // Now that we have the Tx the ethereum wallet must sign the ID
     let consensus_parameters = fuel_wallet.provider().unwrap().consensus_parameters();
@@ -112,6 +113,8 @@ async fn testing() {
 
     // Then we add in the signed data for the witness
     tx.witnesses_mut().push(Witness::from(signed_tx.to_vec()));
+
+    dbg!(tx.clone());
 
     // TODO: predicate fails to validate despite it always returning true so the setup must be incorrect here
     // Execute the Tx
