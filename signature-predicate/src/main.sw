@@ -20,7 +20,7 @@ configurable {
 
 fn main(witness_index: u8) -> bool {
     // Retrieve the MetaMask signature from the witness data in the Tx at the specified index
-    // let signature: B512 = tx_witness_data(witness_index);
+    let signature: B512 = tx_witness_data(witness_index);
 
     // Hash the Fuel Tx (as the signed message) and attempt to recover the signer from the signature
     // let result = ec_recover_evm_address(signature, keccak256(tx_id()));

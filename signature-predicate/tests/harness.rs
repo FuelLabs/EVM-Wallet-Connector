@@ -5,7 +5,6 @@ use fuels::{
     types::{
         input::Input,
         transaction_builders::{ScriptTransactionBuilder, TransactionBuilder},
-        unresolved_bytes::UnresolvedBytes,
         Bits256, EvmAddress, coin_type::CoinType,
     },
 };
@@ -59,9 +58,8 @@ async fn testing() {
     // Create a predicate
     let predicate = Predicate::load_from(PREDICATE_BINARY_PATH)
         .unwrap()
-        .with_provider(fuel_wallet.provider().unwrap().clone())
-        .with_configurables(configurables);
-        // .with_data(MyPredicateEncoder::encode_data(witness_index));
+        .with_provider(fuel_wallet.provider().unwrap().clone());
+        // .with_configurables(configurables);
 
     // TODO: Why is this forced? I'd like to remove it
     fuel_wallet
@@ -100,6 +98,7 @@ async fn testing() {
     // Create the Tx
     let mut tx = ScriptTransactionBuilder::default()
         .set_inputs(inputs)
+        .set_tx_params(TxParameters::default())
         .set_consensus_parameters(fuel_wallet.provider().unwrap().consensus_parameters())
         .build()
         .unwrap();
@@ -126,5 +125,5 @@ async fn testing() {
         .unwrap();
     dbg!(response);
 
-    panic!();
+    // panic!();
 }
