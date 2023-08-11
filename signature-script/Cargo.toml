@@ -10,9 +10,10 @@ license = "Apache-2.0"
 ethers = "2.0"
 ethers-core = "2.0"
 ethers-signers = "2.0"
-fuels = { git = "https://github.com/FuelLabs/fuels-rs", branch = "feat/add-build-tx-for-scripts"  }
+fuels = { git = "https://github.com/FuelLabs/fuels-rs", branch = "feat/add-build-tx-for-scripts", features = ["fuel-core-lib"]  }
+sha3 = "0.10.8"
 tokio = { version = "1.12", features = ["rt", "macros"] }
-fuel-tx = "0.34.0"
+fuel-tx = "0.35.3"
 
 [[test]]
 harness = true

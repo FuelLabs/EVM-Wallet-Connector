@@ -1,3 +1,6 @@
+#![allow(unused_imports)]
+#![allow(non_snake_case)]
+
 use fuel_tx::Witness;
 use fuels::{
     accounts::predicate::Predicate,
@@ -10,8 +13,10 @@ use fuels::{
     },
 };
 
-use ethers_core::{k256::ecdsa::SigningKey, rand::thread_rng};
+use ethers_core::{k256::ecdsa::SigningKey, rand::thread_rng, types::{Signature, U256}};
 use ethers_signers::{LocalWallet, Signer as EthSigner, Wallet};
+
+use sha3::{Digest, Keccak256};
 
 const SCRIPT_BINARY_PATH: &str = "./out/debug/signature-script.bin";
 
@@ -37,7 +42,7 @@ async fn testing() {
     let eth_wallet = LocalWallet::new(&mut thread_rng());
     let padded_eth_address = convert_eth_address(&eth_wallet.address().0);
     let evm_address = EvmAddress::from(Bits256(padded_eth_address));
-    dbg!(&evm_address);
+    // dbg!(&evm_address);
 
     // Create the predicate by setting the signer and pass in the witness argument
     let witness_index = 1;
@@ -52,16 +57,38 @@ async fn testing() {
     // Now that we have the Tx the ethereum wallet must sign the ID
     let consensus_parameters = fuel_wallet.provider().unwrap().consensus_parameters();
     let tx_id = tx.id(consensus_parameters.chain_id.into());
+    
+    let mut hasher = Keccak256::new();
+    hasher.update(tx_id);
+    let result = hasher.finalize();
+    dbg!(result);
 
-    let signed_tx = eth_wallet.sign_message(*tx_id).await.unwrap();
-    dbg!(&signed_tx.to_vec());
-    dbg!(&signed_tx.to_vec().len());
+    // let signed_tx = eth_wallet.sign_message(*tx_id).await.unwrap();
+    let signed_tx = eth_wallet.sign_message(result).await.unwrap();
+
+    let fk = U256::from(signed_tx.v) << 255;
+
+    let r = signed_tx.r;
+    let yParityAndS = fk | signed_tx.s;
+
+    let mut sig = [0u8; 64];
+    let mut r_bytes = [0u8; 32];
+    let mut s_bytes = [0u8; 32];
+    r.to_big_endian(&mut r_bytes);
+    yParityAndS.to_big_endian(&mut s_bytes);
+    sig[..32].copy_from_slice(&r_bytes);
+    sig[32..64].copy_from_slice(&s_bytes);
+
+    let signed_tx = sig;
+
+    // dbg!(&signed_tx.to_vec());
+    // dbg!(&signed_tx.to_vec().len());
 
     // Then we add in the signed data for the witness
     tx.witnesses_mut().push(Witness::from(signed_tx.to_vec()));
 
     // dbg!(&tx);
-    dbg!(*tx_id);
+    // dbg!(*tx_id);
 
     // TODO: predicate fails to validate despite it always returning true so the setup must be incorrect here
     // Execute the Tx
@@ -76,5 +103,5 @@ async fn testing() {
     dbg!(response.value);
     dbg!(response.decode_logs().filter_succeeded());
 
-    // panic!();
+    panic!();
 }
