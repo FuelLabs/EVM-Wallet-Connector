@@ -83,10 +83,10 @@ async fn testing() {
 
     let response = script_call_handler.get_response(receipts).unwrap();
 
-    dbg!(&evm_address);
-    dbg!(&signed_tx.to_vec());
+    // dbg!(&signed_tx.to_vec());
+    // dbg!(*tx_id);
     // dbg!(result);
-    dbg!(*tx_id);
+    dbg!(&evm_address);
 
     dbg!(response.decode_logs().filter_succeeded());
     assert!(response.value);
