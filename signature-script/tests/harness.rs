@@ -1,8 +1,3 @@
-#![allow(unused_imports)]
-#![allow(non_snake_case)]
-
-use core::panic;
-
 use fuel_tx::Witness;
 use fuels::{
     accounts::predicate::Predicate,
@@ -65,13 +60,11 @@ async fn testing() {
 
     let signed_tx = eth_wallet.sign_message(*tx_id).await.unwrap();
 
-    let mut signed_tx = signed_tx.to_vec();
-    let a = signed_tx.pop();
-    dbg!(a);
-    // dbg!(signed_tx.clone());
+    // Convert into compact format for Sway
+    let signed_tx = compact(&signed_tx);
 
     // Then we add in the signed data for the witness
-    tx.witnesses_mut().push(Witness::from(signed_tx));
+    tx.witnesses_mut().push(Witness::from(signed_tx.to_vec()));
 
     // Execute the Tx
     let receipts = fuel_wallet
@@ -83,26 +76,21 @@ async fn testing() {
 
     let response = script_call_handler.get_response(receipts).unwrap();
 
-    // dbg!(&signed_tx.to_vec());
-    // dbg!(*tx_id);
-    dbg!(&evm_address);
-
-    dbg!(response.decode_logs().filter_succeeded());
     assert!(response.value);
 }
 
-// fn compact(signature: &Signature) -> [u8; 64] {
-//     let fk = U256::from(signature.v) << 255;
+fn compact(signature: &Signature) -> [u8; 64] {
+    let shifted_parity = U256::from(signature.v - 27) << 255;
 
-//     let r = signature.r;
-//     let yParityAndS = fk | signature.s;
+    let r = signature.r;
+    let yParityAndS = shifted_parity | signature.s;
 
-//     let mut sig = [0u8; 64];
-//     let mut r_bytes = [0u8; 32];
-//     let mut s_bytes = [0u8; 32];
-//     r.to_big_endian(&mut r_bytes);
-//     yParityAndS.to_big_endian(&mut s_bytes);
-//     sig[..32].copy_from_slice(&r_bytes);
-//     sig[32..64].copy_from_slice(&s_bytes);
-//     return sig;
-// }
+    let mut sig = [0u8; 64];
+    let mut r_bytes = [0u8; 32];
+    let mut s_bytes = [0u8; 32];
+    r.to_big_endian(&mut r_bytes);
+    yParityAndS.to_big_endian(&mut s_bytes);
+    sig[..32].copy_from_slice(&r_bytes);
+    sig[32..64].copy_from_slice(&s_bytes);
+    return sig;
+}

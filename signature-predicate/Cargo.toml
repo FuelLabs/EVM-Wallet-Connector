@@ -10,9 +10,9 @@ license = "Apache-2.0"
 ethers = "2.0"
 ethers-core = "2.0"
 ethers-signers = "2.0"
-fuels = { version = "0.44", features = ["fuel-core-lib"] }
+fuels = { version = "0.46", features = ["fuel-core-lib"] }
 tokio = { version = "1.12", features = ["rt", "macros"] }
-fuel-tx = "0.34.0"
+fuel-tx = "0.35.3"
 
 [[test]]
 harness = true
