@@ -1,0 +1,13 @@
+{
+	"dependencies": {
+		"@fuel-wallet/sdk": "^0.11.0",
+		"@fuel-wallet/types": "^0.11.0",
+		"fuels": "^0.53.0"
+	},
+	"devDependencies": {
+		"tsup": "^7.2.0"
+	},
+	"scripts": {
+		"build": "pnpm tsup --dts"
+	}
+}
