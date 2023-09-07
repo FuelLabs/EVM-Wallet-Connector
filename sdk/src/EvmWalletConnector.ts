@@ -12,13 +12,23 @@ import {
   FuelWalletLocked,
   FuelWalletProvider
 } from '@fuel-wallet/sdk';
-import { JsonAbi, TransactionRequestLike } from 'fuels';
+import { JsonAbi, TransactionRequestLike, Predicate, AbstractAddress } from 'fuels';
 import { BrowserProvider, Signer } from 'ethers';
+
+import { readFileSync } from 'fs';
+import { hexlify } from '@ethersproject/bytes';
 
 class EVMWalletConnector extends FuelWalletConnection {
   ethProvider: BrowserProvider;
   fuelProvider: FuelWalletProvider;
   ethSigner: Signer | null;
+
+  predicateBinary = hexlify(
+    readFileSync('../simple-predicate/out/debug/simple-predicate.bin')
+  );
+  predicateABI = JSON.parse(
+    readFileSync('../simple-predicate/out/debug/simple-predicate.bin', 'utf-8')
+  );
 
   constructor(ethProvider: BrowserProvider, fuelProvider: FuelWalletProvider) {
     super({ name: 'EVM-Wallet-Connector' }); // TODO: add icon later
@@ -42,35 +52,52 @@ class EVMWalletConnector extends FuelWalletConnection {
   }
 
   async accounts(): Promise<Array<string>> {
-    // get the predicate bytecode, use each address of each account to set the configurable and then calculate each predicate address for this
-    // addresses of each predicate
-
     // Get the ethereum accounts
     let ethAccounts: Array<string> = await this.ethProvider.send(
       'eth_accounts',
       []
     );
-    let predicateAccounts: Array<string>;
+    let predicateAccounts: Array<string> = [];
 
-    // Load the predicate file
-
-    // For each account
     // Init predicate
-    // Set the account configurable
-    // Get the address of predicate
+    const chainId = await this.fuelProvider.getChainId();
+    const predicate = new Predicate(
+      this.predicateBinary,
+      chainId,
+      this.predicateABI,
+      this.fuelProvider
+    );
 
-    return Promise.resolve(ethAccounts);
+    // For each account set the configurable
+    for (let index = 0; index < ethAccounts.length; index++) {
+      const configurable = { SIGNER: ethAccounts[index] };
+      predicate.setData(configurable.SIGNER);
+      predicateAccounts.push(predicate.address.toAddress());
+    }
+
+    return predicateAccounts;
   }
 
   async currentAccount(): Promise<string> {
     let ethAccount = this.ethSigner?.getAddress();
 
-    // Load the predicate file
     // Init predicate
-    // Set the account configurable
-    // Get the address of predicate
+    const chainId = await this.fuelProvider.getChainId();
+    const predicate = new Predicate(
+      this.predicateBinary,
+      chainId,
+      this.predicateABI,
+      this.fuelProvider
+    );
 
-    return '';
+    // Set the account configurable
+    const configurable = { SIGNER: ethAccount };
+    predicate.setData(await configurable.SIGNER);
+
+    // Get the address of predicate
+    let account = predicate.address.toAddress();
+
+    return account;
   }
 
   async signMessage(address: string, message: string): Promise<string> {
@@ -101,8 +128,10 @@ class EVMWalletConnector extends FuelWalletConnection {
   }
 
   async getWallet(): Promise<FuelWalletLocked> {
-    // turn instance of predicate into this
-    return {} as FuelWalletLocked;
+    return {
+      address: this.currentAccount(),
+      provider: this.fuelProvider
+    };
   }
 
   async getProvider(): Promise<FuelWalletProvider> {
