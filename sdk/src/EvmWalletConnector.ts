@@ -16,46 +16,65 @@ import { JsonAbi, TransactionRequestLike } from 'fuels';
 import { BrowserProvider, Signer } from 'ethers';
 
 class EVMWalletConnector extends FuelWalletConnection {
-  provider: BrowserProvider;
-  signer: Signer | null;
+  ethProvider: BrowserProvider;
+  fuelProvider: FuelWalletProvider;
+  ethSigner: Signer | null;
 
-  constructor(provier: BrowserProvider) {
-    super({} as FuelWalletConnector); // TODO: what do I do here?
-    this.provider = provier;
-    this.signer = null;
+  constructor(ethProvider: BrowserProvider, fuelProvider: FuelWalletProvider) {
+    super({ name: 'EVM-Wallet-Connector' }); // TODO: add icon later
+    this.ethProvider = ethProvider;
+    this.fuelProvider = fuelProvider;
+    this.ethSigner = null;
   }
 
   async isConnected(): Promise<boolean> {
-    return Promise.resolve(this.signer !== null);
+    return this.ethSigner !== null;
   }
 
   async connect(): Promise<boolean> {
-    this.signer = await this.provider.getSigner();
-    return Promise.resolve(true);
+    this.ethSigner = await this.ethProvider.getSigner();
+    return true;
   }
 
   async disconnect(): Promise<boolean> {
-    this.signer = null;
-    return Promise.resolve(true);
+    this.ethSigner = null;
+    return true;
   }
 
   async accounts(): Promise<Array<string>> {
-    if (await this.isConnected()) {
-      return []; // TODO
-    } else {
-      return [];
-    }
+    // get the predicate bytecode, use each address of each account to set the configurable and then calculate each predicate address for this
+    // addresses of each predicate
+
+    // Get the ethereum accounts
+    let ethAccounts: Array<string> = await this.ethProvider.send(
+      'eth_accounts',
+      []
+    );
+    let predicateAccounts: Array<string>;
+
+    // Load the predicate file
+
+    // For each account
+    // Init predicate
+    // Set the account configurable
+    // Get the address of predicate
+
+    return Promise.resolve(ethAccounts);
   }
 
   async currentAccount(): Promise<string> {
-    if (!(await this.isConnected())) {
-      throw new Error('Not Connected.');
-    }
-    return this.signer!.getAddress();
+    let ethAccount = this.ethSigner?.getAddress();
+
+    // Load the predicate file
+    // Init predicate
+    // Set the account configurable
+    // Get the address of predicate
+
+    return '';
   }
 
   async signMessage(address: string, message: string): Promise<string> {
-    // TODO: fail for now since signature schemes are different
+    // Dev: a predicate "account" cannot sign
     throw new Error('Not Implemented.');
   }
 
@@ -68,58 +87,52 @@ class EVMWalletConnector extends FuelWalletConnection {
   }
 
   async assets(): Promise<Array<Asset>> {
-    throw new Error('Not Implemented.');
+    return [];
   }
 
   async addAsset(asset: Asset): Promise<boolean> {
-    throw new Error('Not Implemented.');
+    console.warn('A predicate account cannot add an asset.');
+    return false;
   }
 
   async addAssets(assets: Asset[]): Promise<boolean> {
-    throw new Error('Not Implemented.');
+    console.warn('A predicate account cannot add assets.');
+    return false;
   }
 
   async getWallet(): Promise<FuelWalletLocked> {
+    // turn instance of predicate into this
     return {} as FuelWalletLocked;
   }
 
-  async getProvider(): Promise<BrowserProvider> {
-    return Promise.resolve(this.provider);
+  async getProvider(): Promise<FuelWalletProvider> {
+    return this.fuelProvider;
   }
 
   async addAbi(abiMap: AbiMap): Promise<boolean> {
-    console.warn('Cannot add an ABI.');
-    return Promise.resolve(false);
+    console.warn('Cannot add an ABI to a predicate account.');
+    return false;
   }
 
-  async getAbi(contractId: string): Promise<JsonAbi> {
-    return Promise.resolve({} as JsonAbi);
+  async getAbi(contractId: string): Promise<JsonAbi | null> {
+    return null;
   }
 
   async hasAbi(contractId: string): Promise<boolean> {
-    return Promise.resolve(false);
+    return false;
   }
 
   async network(): Promise<FuelProviderConfig> {
-    if (await this.isConnected()) {
-      let network = await this.provider.getNetwork();
-      let config: FuelProviderConfig = { id: network.id, url: network.url };
-      return Promise.resolve(config);
-    } else {
-      return Promise.resolve({} as FuelProviderConfig);
-    }
+    let network = await this.fuelProvider.getNetwork();
+    return { id: network.chainId.toString(), url: this.fuelProvider.url };
   }
 
   async networks(): Promise<FuelProviderConfig[]> {
-    // TODO: fetch networks
-
-    return {} as FuelProviderConfig[];
+    return [await this.network()];
   }
 
   async addNetwork(network: Network): Promise<boolean> {
-    // TODO: add network to some place
-
-    return Promise.resolve(true);
+    throw new Error('Not Implemented.');
   }
 
   // on<E extends FuelEvents['type'], D extends FuelEventArg<E>>(
