@@ -12,7 +12,7 @@ import {
   FuelWalletLocked,
   FuelWalletProvider
 } from '@fuel-wallet/sdk';
-import { JsonAbi, TransactionRequestLike, Predicate, AbstractAddress } from 'fuels';
+import { JsonAbi, TransactionRequestLike, Predicate, Address } from 'fuels';
 import { BrowserProvider, Signer } from 'ethers';
 
 import { readFileSync } from 'fs';
@@ -129,7 +129,7 @@ class EVMWalletConnector extends FuelWalletConnection {
 
   async getWallet(): Promise<FuelWalletLocked> {
     return {
-      address: this.currentAccount(),
+      address: Address.fromString(await this.currentAccount()),
       provider: this.fuelProvider
     };
   }
