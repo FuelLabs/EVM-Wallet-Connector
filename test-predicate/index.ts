@@ -1,5 +1,5 @@
-import { Wallet as ETHWallet, Signer, ethers } from "ethers";
-import { recoverAddress, hashMessage, toUtf8Bytes, formatBytes32String } from "ethers/lib/utils";
+import { Wallet as ETHWallet } from "ethers";
+import { arrayify, hashMessage } from "ethers/lib/utils";
 import { readFileSync } from "fs";
 import {
   Predicate,
@@ -9,11 +9,10 @@ import {
   hexlify,
   Wallet as FUELWallet,
   BaseAssetId,
-  Address,
   CoinQuantityLike,
-  U64Coder,
   hashTransaction,
   BN,
+  toBytes,
 } from "fuels";
 import { join } from "path";
 
@@ -89,9 +88,11 @@ async function main() {
   const txId = hashTransaction(newTx, 0);
   const signature = await ethWallet.signMessage(txId);
 
-  request.updateWitness(0, signature);
+  request.updateWitness(0, compact(signature));
   request.witnesses.push('0x');
   request.updateWitness(1, hashMessage(txId));
+
+  console.dir(request.toJSON(), { depth: null });
 
   const result2 = await provider.sendTransaction(newTx);
   const tx = await result2.waitForResult();
@@ -101,3 +102,36 @@ async function main() {
 }
 
 main();
+
+function compact(sigString: string): Uint8Array {
+const r = sigString.slice(0, 66); // First 64 characters after 0x
+const s = '0x' + sigString.slice(66, 130); // Next 64 characters
+const v = parseInt(sigString.slice(130, 132), 16); // Last 2 characters
+  const shiftedParity = bn(v - 27).shln(255);
+  const yParityAndS = shiftedParity.or(bn(s));
+
+  const sig = new Uint8Array(64);
+  const sBytes = yParityAndS.toArray('be', 32);
+  sig.set(arrayify(r), 0);
+  sig.set(sBytes, 32);
+
+  return sig;
+}
+
+
+// This can probably be cleaned up
+// fn compact(signature: &Signature) -> [u8; 64] {
+//     let shifted_parity = U256::from(signature.v - 27) << 255;
+
+//     let r = signature.r;
+//     let y_parity_and_s = shifted_parity | signature.s;
+
+//     let mut sig = [0u8; 64];
+//     let mut r_bytes = [0u8; 32];
+//     let mut s_bytes = [0u8; 32];
+//     r.to_big_endian(&mut r_bytes);
+//     y_parity_and_s.to_big_endian(&mut s_bytes);
+//     sig[..32].copy_from_slice(&r_bytes);
+//     sig[32..64].copy_from_slice(&s_bytes);
+//     return sig;
+// }

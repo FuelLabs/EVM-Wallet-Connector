@@ -1,18 +1,19 @@
 use fuel_tx::Witness;
 use fuels::{
-    accounts::predicate::Predicate,
-    prelude::{Signer, *},
+    accounts::{predicate::Predicate, fuel_crypto::SecretKey},
+    prelude::{*},
     types::{
-        coin_type::CoinType,
-        input::Input,
         transaction_builders::{ScriptTransactionBuilder, TransactionBuilder},
         Bits256, EvmAddress,
-    },
+    }, client::FuelClient,
+};
+use std::{
+    str::FromStr
 };
 
 use ethers_core::{
     rand::thread_rng,
-    types::{Signature, U256},
+    types::{Signature, U256}, utils::hash_message,
 };
 use ethers_signers::{LocalWallet, Signer as EthSigner};
 
@@ -32,21 +33,21 @@ fn convert_eth_address(eth_wallet_address: &[u8]) -> [u8; 32] {
 #[tokio::test]
 async fn testing() {
     // Create fuel wallet
-    let mut wallets =
-        launch_custom_provider_and_get_wallets(WalletsConfig::default(), None, None).await;
-    let fuel_wallet = wallets.pop().unwrap();
-
-    let wallet_coins = fuel_wallet
-        .get_asset_inputs_for_amount(
-            AssetId::default(),
-            fuel_wallet
-                .get_asset_balance(&AssetId::default())
-                .await
-                .unwrap(),
-            None,
+    // let mut wallets =
+    //     launch_custom_provider_and_get_wallets(WalletsConfig::default(), None, None).await;
+    // let fuel_wallet = wallets.pop().unwrap();
+    // let fuel_provider = fuel_wallet.provider().unwrap().clone();
+    let fuel_client: FuelClient = FuelClient::new("http://127.0.0.1:4000").unwrap();
+    let node_info = fuel_client.chain_info().await.unwrap();
+    let consensus_parameters = node_info.consensus_parameters;
+    let fuel_provider = Provider::new(fuel_client.clone(), consensus_parameters.clone().into());
+    let fuel_wallet = WalletUnlocked::new_from_private_key(
+        SecretKey::from_str(
+            "0xa449b1ffee0e2205fa924c6740cc48b3b473aa28587df6dab12abc245d1f5298",
         )
-        .await
-        .unwrap();
+        .unwrap(),
+        Some(fuel_provider.clone()),
+    );
 
     // Create eth wallet and convert to EVMAddress
     let eth_wallet = LocalWallet::new(&mut thread_rng());
@@ -54,76 +55,72 @@ async fn testing() {
     let evm_address = EvmAddress::from(Bits256(padded_eth_address));
 
     // Create the predicate by setting the signer and pass in the witness argument
-    let witness_index = 1;
+    // let witness_index = 1;
     let configurables = MyPredicateConfigurables::new().set_SIGNER(evm_address);
 
     // Create a predicate
     let predicate = Predicate::load_from(PREDICATE_BINARY_PATH)
         .unwrap()
-        .with_provider(fuel_wallet.provider().unwrap().clone())
+        .with_provider(fuel_provider.clone())
         .with_configurables(configurables);
+
+    // Tx params
+    let tx_params = TxParameters::new(1, 100_000, 0);
 
     fuel_wallet
         .transfer(
             &predicate.address().clone(),
-            1,
+            1_000_000,
             AssetId::default(),
-            TxParameters::default(),
+            tx_params.clone(),
         )
         .await
         .unwrap();
 
-    // Create input predicate
-    let predicate_coin = &fuel_wallet
-        .provider()
-        .unwrap()
-        .get_spendable_resources(ResourceFilter {
-            from: predicate.address().clone(),
-            asset_id: AssetId::default(),
-            amount: 1,
-            ..Default::default()
-        })
-        .await
-        .unwrap()[0];
+    // Create a receiver wallet
+    let fuel_wallet_receiver = WalletUnlocked::new_random(Some(fuel_provider.clone()));
 
-    let input_predicate = match predicate_coin {
-        CoinType::Coin(_) => Input::resource_predicate(
-            predicate_coin.clone(),
-            predicate.code().clone(),
-            MyPredicateEncoder::encode_data(witness_index),
-        ),
-        _ => panic!("Predicate coin resource type does not match"),
-    };
-
-    let mut inputs = vec![input_predicate];
-    inputs.extend(wallet_coins);
-
-    let consensus_parameters = fuel_wallet.provider().unwrap().consensus_parameters();
-
-    // Create the Tx
-    let mut tx = ScriptTransactionBuilder::default()
-        .set_inputs(inputs)
-        .set_tx_params(TxParameters::default())
-        .set_consensus_parameters(consensus_parameters)
-        .build()
-        .unwrap();
-    fuel_wallet.sign_transaction(&mut tx).unwrap();
+    // ================================
+    // Create a prediucate transfer
+    // ================================
+    let amount = 1_000;
+    let inputs = predicate
+        .get_asset_inputs_for_amount(AssetId::default(), amount, None)
+        .await.unwrap();
+    let outputs = predicate.get_asset_outputs_for_amount(
+        fuel_wallet_receiver.address(),
+        AssetId::default(),
+        amount,
+    );
+    let tx_builder = ScriptTransactionBuilder::prepare_transfer(inputs, outputs, tx_params.clone())
+        .set_consensus_parameters(consensus_parameters.clone().into());
+    let mut tx = predicate
+        .add_fee_resources(tx_builder, amount, None)
+        .await.unwrap();
 
     // Now that we have the Tx the ethereum wallet must sign the ID
     let tx_id = tx.id(consensus_parameters.chain_id.into());
-
+    // Message signature
     let signature = eth_wallet.sign_message(*tx_id).await.unwrap();
-
     // Convert into compact format for Sway
-    let signed_tx = compact(&signature);
+    // let signed_tx = compact(&signature);
 
     // Then we add in the signed data for the witness
-    tx.witnesses_mut().push(Witness::from(signed_tx.to_vec()));
+    tx.witnesses_mut().clear();
+    tx.witnesses_mut().push(Witness::from(signature.to_vec()));
+    tx.witnesses_mut().push(Witness::from(hash_message(*tx_id).as_bytes()));
+
+    // Estimate predicates
+    tx.estimate_predicates(&consensus_parameters.clone().into()).unwrap();
+
+    println!("{:#?}", tx);
+
+    let receipts = fuel_provider.send_transaction(&tx).await.unwrap();
+    println!("{:#?}", receipts);
 
     // Execute the Tx
-    let response = fuel_wallet
-        .provider()
-        .unwrap()
+    let response = fuel_provider
+        .clone()
         .send_transaction(&tx)
         .await
         .unwrap();

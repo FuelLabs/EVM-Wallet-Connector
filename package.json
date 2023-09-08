@@ -1,0 +1,5 @@
+{
+    "scripts": {
+        "node:start": "sh ./.config/start-fuel.sh"
+    }
+}
