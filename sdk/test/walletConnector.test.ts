@@ -1,80 +1,83 @@
 import { assert } from "chai";
+import { MetaMaskSDK } from '@metamask/sdk';
 
 describe("EVM Wallet Connector", () => {
+
+    describe("connect()", () => {
+        it("it connects", async () => {
+            assert.equal(true, false);
+        });
+    })
 
     beforeEach(() => {
 
     });
 
-    it("connect()", () => {
+    xit("isConnected()", () => {
         assert.equal(true, false);
     });
 
-    it("isConnected()", () => {
+    xit("disconnect()", () => {
         assert.equal(true, false);
     });
 
-    it("disconnect()", () => {
+    xit("accounts()", () => {
         assert.equal(true, false);
     });
 
-    it("accounts()", () => {
+    xit("currentAccount()", () => {
         assert.equal(true, false);
     });
 
-    it("currentAccount()", () => {
+    xit("signMessage()", () => {
         assert.equal(true, false);
     });
 
-    it("signMessage()", () => {
+    xit("sendTransaction()", () => {
         assert.equal(true, false);
     });
 
-    it("sendTransaction()", () => {
+    xit("assets()", () => {
         assert.equal(true, false);
     });
 
-    it("assets()", () => {
+    xit("addAsset()", () => {
         assert.equal(true, false);
     });
 
-    it("addAsset()", () => {
+    xit("addAssets()", () => {
         assert.equal(true, false);
     });
 
-    it("addAssets()", () => {
+    xit("getWallet()", () => {
         assert.equal(true, false);
     });
 
-    it("getWallet()", () => {
+    xit("getProvider()", () => {
         assert.equal(true, false);
     });
 
-    it("getProvider()", () => {
+    xit("addAbi()", () => {
         assert.equal(true, false);
     });
 
-    it("addAbi()", () => {
+    xit("getAbi()", () => {
         assert.equal(true, false);
     });
 
-    it("getAbi()", () => {
+    xit("hasAbi()", () => {
         assert.equal(true, false);
     });
 
-    it("hasAbi()", () => {
+    xit("network()", () => {
         assert.equal(true, false);
     });
 
-    it("network()", () => {
+    xit("networks()", () => {
         assert.equal(true, false);
     });
 
-    it("networks()", () => {
-        assert.equal(true, false);
-    });
-
-    it("addNetwork()", () => {
+    xit("addNetwork()", () => {
         assert.equal(true, false);
     });
 

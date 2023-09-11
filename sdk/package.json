@@ -10,6 +10,7 @@
 	},
 	"devDependencies": {
 		"@fuels/ts-config": "^0.0.7",
+		"@metamask/sdk": "^0.6.2",
 		"@types/chai": "^4.3.6",
 		"@types/mocha": "^10.0.1",
 		"chai": "^4.3.8",

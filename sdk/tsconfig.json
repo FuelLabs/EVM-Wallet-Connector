@@ -3,7 +3,7 @@
     "compilerOptions": {
         "target": "ESNext",
         "lib": ["DOM", "ESNext"],
-        "module": "ESNext",
+        "module": "CommonJS",
         "strict": true,
         "noUncheckedIndexedAccess": true,
         "skipLibCheck": true,
