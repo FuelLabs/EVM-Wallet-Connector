@@ -1,3 +1,12 @@
 {
-    "extends": "@fuels/ts-config/base.json"
+    "extends": "@fuels/ts-config/base.json",
+    "compilerOptions": {
+        "target": "ESNext",
+        "lib": ["DOM", "ESNext"],
+        "module": "ESNext",
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "skipLibCheck": true,
+        "outDir": "./dist"
+    }
 }

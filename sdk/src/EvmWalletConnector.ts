@@ -12,7 +12,7 @@ import {
   FuelWalletLocked,
   FuelWalletProvider
 } from '@fuel-wallet/sdk';
-import { JsonAbi, TransactionRequestLike, Predicate, Address } from 'fuels';
+import { JsonAbi, TransactionRequestLike, Predicate } from 'fuels';
 import { BrowserProvider, Signer } from 'ethers';
 
 import { readFileSync } from 'fs';
@@ -127,11 +127,30 @@ class EVMWalletConnector extends FuelWalletConnection {
     return false;
   }
 
-  async getWallet(): Promise<FuelWalletLocked> {
-    return {
-      address: Address.fromString(await this.currentAccount()),
-      provider: this.fuelProvider
-    };
+  async getWallet(address: string): Promise<FuelWalletLocked> {
+    const provider = await this.getProvider();
+
+    let ethAccounts: Array<string> = await this.ethProvider.send(
+      'eth_accounts',
+      []
+    );
+
+    if (!ethAccounts.includes(address)) {
+      throw Error('Invalid account');
+    }
+
+    const chainId = await this.fuelProvider.getChainId();
+    const predicate = new Predicate(
+      this.predicateBinary,
+      chainId,
+      this.predicateABI,
+      this.fuelProvider
+    );
+
+    const configurable = { SIGNER: address };
+    predicate.setData(configurable.SIGNER);
+
+    return new FuelWalletLocked(predicate.address.toAddress(), provider);
   }
 
   async getProvider(): Promise<FuelWalletProvider> {
@@ -143,8 +162,8 @@ class EVMWalletConnector extends FuelWalletConnection {
     return false;
   }
 
-  async getAbi(contractId: string): Promise<JsonAbi | null> {
-    return null;
+  async getAbi(contractId: string): Promise<JsonAbi> {
+    throw Error('Cannot get ABI');
   }
 
   async hasAbi(contractId: string): Promise<boolean> {
