@@ -18,7 +18,7 @@ import { BrowserProvider, Signer } from 'ethers';
 import { readFileSync } from 'fs';
 import { hexlify } from '@ethersproject/bytes';
 
-class EVMWalletConnector extends FuelWalletConnection {
+export class EVMWalletConnector extends FuelWalletConnection {
   ethProvider: BrowserProvider;
   fuelProvider: FuelWalletProvider;
   ethSigner: Signer | null;
