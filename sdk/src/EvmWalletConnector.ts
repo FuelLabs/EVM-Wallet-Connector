@@ -13,13 +13,13 @@ import {
   FuelWalletProvider
 } from '@fuel-wallet/sdk';
 import { JsonAbi, TransactionRequestLike, Predicate } from 'fuels';
-import { BrowserProvider, Signer } from 'ethers';
+import { BrowserProvider, JsonRpcProvider, Signer } from 'ethers';
 
 import { readFileSync } from 'fs';
 import { hexlify } from '@ethersproject/bytes';
 
 export class EVMWalletConnector extends FuelWalletConnection {
-  ethProvider: BrowserProvider;
+  ethProvider: JsonRpcProvider;
   fuelProvider: FuelWalletProvider;
   ethSigner: Signer | null;
 
@@ -27,10 +27,13 @@ export class EVMWalletConnector extends FuelWalletConnection {
     readFileSync('../simple-predicate/out/debug/simple-predicate.bin')
   );
   predicateABI = JSON.parse(
-    readFileSync('../simple-predicate/out/debug/simple-predicate.bin', 'utf-8')
+    readFileSync(
+      '../simple-predicate/out/debug/simple-predicate-abi.json',
+      'utf-8'
+    )
   );
 
-  constructor(ethProvider: BrowserProvider, fuelProvider: FuelWalletProvider) {
+  constructor(ethProvider: JsonRpcProvider, fuelProvider: FuelWalletProvider) {
     super({ name: 'EVM-Wallet-Connector' }); // TODO: add icon later
     this.ethProvider = ethProvider;
     this.fuelProvider = fuelProvider;

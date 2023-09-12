@@ -6,14 +6,14 @@ import {
   FuelWalletLocked,
   FuelWalletProvider
 } from '@fuel-wallet/sdk';
-import { BrowserProvider } from 'ethers';
+import { JsonRpcProvider } from 'ethers';
 import { readFileSync } from 'fs';
 import { hexlify } from '@ethersproject/bytes';
 import { InputValue, Predicate } from 'fuels';
 
 describe('EVM Wallet Connector', () => {
   // Providers used to interact with wallets
-  let ethProvider: BrowserProvider;
+  let ethProvider: JsonRpcProvider;
   let fuelProvider: FuelWalletProvider;
 
   // Our connector bridging MetaMask and predicate accounts
@@ -28,9 +28,10 @@ describe('EVM Wallet Connector', () => {
   let predicateAccount2: string;
 
   async function createPredicate(): Promise<Predicate<InputValue[]>> {
-    let filePath = '../simple-predicate/out/debug/simple-predicate.bin';
-    let predicateBinary = hexlify(readFileSync(filePath));
-    let predicateABI = JSON.parse(readFileSync(filePath, 'utf-8'));
+    let filePathBin = '../simple-predicate/out/debug/simple-predicate.bin';
+    let filePathABI = '../simple-predicate/out/debug/simple-predicate-abi.json';
+    let predicateBinary = hexlify(readFileSync(filePathBin));
+    let predicateABI = JSON.parse(readFileSync(filePathABI, 'utf-8'));
 
     const chainId = await fuelProvider.getChainId();
     const predicate = new Predicate(
@@ -61,7 +62,7 @@ describe('EVM Wallet Connector', () => {
 
     // Setting the providers once should not cause issues
     // Create the Ethereum provider
-    ethProvider = new ethers.BrowserProvider(ethers.provider);
+    ethProvider = new ethers.JsonRpcProvider();
 
     // Create the Fuel provider
     let walletConnection = new FuelWalletConnection({
