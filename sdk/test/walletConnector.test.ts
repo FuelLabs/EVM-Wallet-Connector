@@ -3,26 +3,36 @@ import { ethers } from 'hardhat';
 import { EVMWalletConnector } from '../src/index';
 import { FuelWalletConnection, FuelWalletProvider } from '@fuel-wallet/sdk';
 import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
+import { BrowserProvider } from 'ethers';
 
 describe('EVM Wallet Connector', () => {
+  // Providers used to interact with wallets
+  let ethProvider: BrowserProvider;
+  let fuelProvider: FuelWalletProvider;
+
+  // Our connector bridging MetaMask and predicate accounts
   let connector: EVMWalletConnector;
+
+  // TODO: set to predicate addresses instead?
   let account1: HardhatEthersSigner;
   let account2: HardhatEthersSigner;
 
   before(async () => {
+    // Setting the providers once should not cause issues
+    ethProvider = new ethers.BrowserProvider(ethers.provider);
+
+    let walletConnection = new FuelWalletConnection({
+      name: 'EVM-Wallet-Connector'
+    });
+    fuelProvider = new FuelWalletProvider('providerUrl', walletConnection);
+
     let signers = await ethers.getSigners();
     account1 = signers.pop();
     account2 = signers.pop();
   });
 
   beforeEach(() => {
-    let ethProvider = new ethers.BrowserProvider(window.ethereum);
-
-    let walletConnection = new FuelWalletConnection({
-      name: 'EVM-Wallet-Connector'
-    });
-    let fuelProvider = new FuelWalletProvider('providerUrl', walletConnection);
-
+    // Class contains state, reset the state for each test
     connector = new EVMWalletConnector(ethProvider, fuelProvider);
   });
 
@@ -67,12 +77,27 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-  xit('accounts()', () => {
-    assert.equal(true, false);
+  describe('accounts()', () => {
+    it('returns the predicate accounts associated with the wallet', async () => {
+      await connector.connect();
+
+      let predicateAccounts = await connector.accounts();
+      let predicateAccount1 = predicateAccounts.pop();
+      let predicateAccount2 = predicateAccounts.pop();
+
+      expect(predicateAccount1).to.be.equal('');
+      expect(predicateAccount2).to.be.equal('');
+    });
   });
 
-  xit('currentAccount()', () => {
-    assert.equal(true, false);
+  describe('currentAccount()', () => {
+    it('returns the predicate account associated with the current signer account', async () => {
+      await connector.connect();
+
+      let predicateAccount = await connector.currentAccount();
+
+      expect(predicateAccount).to.be.equal('');
+    });
   });
 
   describe('signMessage()', () => {
@@ -143,12 +168,27 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-  xit('network()', () => {
-    assert.equal(true, false);
+  describe('network()', () => {
+    it('returns the fuel network info', async () => {
+      let network = await connector.network();
+
+      expect(network.id).to.be.equal(
+        (await connector.fuelProvider.getChainId()).toString()
+      );
+      expect(network.url).to.be.equal(connector.fuelProvider.url);
+    });
   });
 
-  xit('networks()', () => {
-    assert.equal(true, false);
+  describe('networks()', () => {
+    it('returns an array of fuel network info', async () => {
+      let networks = await connector.networks();
+      let network = networks.pop();
+
+      expect(network!.id).to.be.equal(
+        (await connector.fuelProvider.getChainId()).toString()
+      );
+      expect(network!.url).to.be.equal(connector.fuelProvider.url);
+    });
   });
 
   describe('addNetwork()', () => {
