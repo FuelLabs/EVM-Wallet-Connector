@@ -1,9 +1,15 @@
 import { assert, expect } from 'chai';
 import { ethers } from 'hardhat';
 import { EVMWalletConnector } from '../src/index';
-import { FuelWalletConnection, FuelWalletProvider } from '@fuel-wallet/sdk';
-import { HardhatEthersSigner } from '@nomicfoundation/hardhat-ethers/signers';
+import {
+  FuelWalletConnection,
+  FuelWalletLocked,
+  FuelWalletProvider
+} from '@fuel-wallet/sdk';
 import { BrowserProvider } from 'ethers';
+import { readFileSync } from 'fs';
+import { hexlify } from '@ethersproject/bytes';
+import { InputValue, Predicate } from 'fuels';
 
 describe('EVM Wallet Connector', () => {
   // Providers used to interact with wallets
@@ -13,22 +19,60 @@ describe('EVM Wallet Connector', () => {
   // Our connector bridging MetaMask and predicate accounts
   let connector: EVMWalletConnector;
 
-  // TODO: set to predicate addresses instead?
-  let account1: HardhatEthersSigner;
-  let account2: HardhatEthersSigner;
+  // Accounts from hardhat used to determine predicate accounts
+  let ethAccount1: string;
+  let ethAccount2: string;
+
+  // Predicate accounts associated with the ethereum accounts
+  let predicateAccount1: string;
+  let predicateAccount2: string;
+
+  async function createPredicate(): Promise<Predicate<InputValue[]>> {
+    let filePath = '../simple-predicate/out/debug/simple-predicate.bin';
+    let predicateBinary = hexlify(readFileSync(filePath));
+    let predicateABI = JSON.parse(readFileSync(filePath, 'utf-8'));
+
+    const chainId = await fuelProvider.getChainId();
+    const predicate = new Predicate(
+      predicateBinary,
+      chainId,
+      predicateABI,
+      fuelProvider
+    );
+
+    return predicate;
+  }
+
+  async function setPredicateAccount(
+    predicate: Predicate<InputValue[]>,
+    ethAccount: string,
+    predicateAccount: string
+  ) {
+    let configurable = { SIGNER: ethAccount };
+    predicate.setData(configurable.SIGNER);
+    predicateAccount = predicate.address.toAddress();
+  }
 
   before(async () => {
+    // Fetch the signing accounts from hardhat
+    let signers = await ethers.getSigners();
+    ethAccount1 = signers.pop()!.address;
+    ethAccount2 = signers.pop()!.address;
+
     // Setting the providers once should not cause issues
+    // Create the Ethereum provider
     ethProvider = new ethers.BrowserProvider(ethers.provider);
 
+    // Create the Fuel provider
     let walletConnection = new FuelWalletConnection({
       name: 'EVM-Wallet-Connector'
     });
     fuelProvider = new FuelWalletProvider('providerUrl', walletConnection);
 
-    let signers = await ethers.getSigners();
-    account1 = signers.pop();
-    account2 = signers.pop();
+    // Create the predicate and calculate the address for each Ethereum account
+    let predicate = await createPredicate();
+    await setPredicateAccount(predicate, ethAccount1, predicateAccount1);
+    await setPredicateAccount(predicate, ethAccount2, predicateAccount2);
   });
 
   beforeEach(() => {
@@ -82,11 +126,11 @@ describe('EVM Wallet Connector', () => {
       await connector.connect();
 
       let predicateAccounts = await connector.accounts();
-      let predicateAccount1 = predicateAccounts.pop();
-      let predicateAccount2 = predicateAccounts.pop();
+      let acc1 = predicateAccounts.pop();
+      let acc2 = predicateAccounts.pop();
 
-      expect(predicateAccount1).to.be.equal('');
-      expect(predicateAccount2).to.be.equal('');
+      expect(acc1).to.be.equal(predicateAccount1);
+      expect(acc2).to.be.equal(predicateAccount2);
     });
   });
 
@@ -94,9 +138,9 @@ describe('EVM Wallet Connector', () => {
     it('returns the predicate account associated with the current signer account', async () => {
       await connector.connect();
 
-      let predicateAccount = await connector.currentAccount();
+      let account = await connector.currentAccount();
 
-      expect(predicateAccount).to.be.equal('');
+      expect(account).to.be.equal(predicateAccount1);
     });
   });
 
@@ -132,9 +176,11 @@ describe('EVM Wallet Connector', () => {
 
   describe('getWallet()', () => {
     it('returns a predicate wallet', async () => {
-      let wallet = await connector.getWallet(account1.address);
+      let wallet = await connector.getWallet(ethAccount1);
 
-      expect(wallet).to.be.equal('');
+      expect(wallet).to.be.equal(
+        new FuelWalletLocked(predicateAccount1, fuelProvider)
+      );
     });
 
     it('throws error for invalid address', async () => {
