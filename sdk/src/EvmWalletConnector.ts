@@ -13,7 +13,7 @@ import {
   FuelWalletProvider
 } from '@fuel-wallet/sdk';
 import { JsonAbi, TransactionRequestLike, Predicate } from 'fuels';
-import { BrowserProvider, JsonRpcProvider, Signer } from 'ethers';
+import { JsonRpcProvider, Signer } from 'ethers';
 
 import { readFileSync } from 'fs';
 import { hexlify } from '@ethersproject/bytes';

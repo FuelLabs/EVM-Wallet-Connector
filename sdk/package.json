@@ -14,17 +14,18 @@
 		"@nomicfoundation/hardhat-toolbox": "^3.0.0",
 		"@npmcli/config": "^7.2.0",
 		"@types/chai": "^4.3.6",
+		"@types/chai-as-promised": "^7.1.6",
 		"@types/mocha": "^10.0.1",
 		"@types/node": "^20.6.0",
 		"chai": "^4.3.8",
+		"chai-as-promised": "^7.1.1",
 		"hardhat": "^2.17.3",
 		"prettier": "^3.0.3",
 		"ts-node": "^10.9.1",
 		"typescript": "^5.2.2"
 	},
 	"scripts": {
-		"build": "pnpm tsc",
 		"fmt": "prettier --config .prettierrc 'src/*.ts' 'test/*.ts' --write",
-		"test": "mocha"
+		"test": "npx hardhat test"
 	}
 }

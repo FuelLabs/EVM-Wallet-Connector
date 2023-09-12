@@ -1,4 +1,6 @@
-import { assert, expect } from 'chai';
+import chai, { assert, expect } from 'chai';
+import chaiAsPromised from 'chai-as-promised';
+
 import { ethers } from 'hardhat';
 import { EVMWalletConnector } from '../src/index';
 import {
@@ -10,6 +12,8 @@ import { JsonRpcProvider } from 'ethers';
 import { readFileSync } from 'fs';
 import { hexlify } from '@ethersproject/bytes';
 import { InputValue, Predicate } from 'fuels';
+
+chai.use(chaiAsPromised);
 
 describe('EVM Wallet Connector', () => {
   // Providers used to interact with wallets
@@ -68,7 +72,10 @@ describe('EVM Wallet Connector', () => {
     let walletConnection = new FuelWalletConnection({
       name: 'EVM-Wallet-Connector'
     });
-    fuelProvider = new FuelWalletProvider('providerUrl', walletConnection);
+    fuelProvider = new FuelWalletProvider(
+      'https://beta-4.fuel.network/graphql',
+      walletConnection
+    );
 
     // Create the predicate and calculate the address for each Ethereum account
     let predicate = await createPredicate();
@@ -147,9 +154,9 @@ describe('EVM Wallet Connector', () => {
 
   describe('signMessage()', () => {
     it('throws error', async () => {
-      expect(await connector.signMessage('address', 'message')).throws(
-        'Not Implemented.'
-      );
+      await expect(
+        connector.signMessage('address', 'message')
+      ).to.be.rejectedWith('Not Implemented.');
     });
   });
 
@@ -159,7 +166,7 @@ describe('EVM Wallet Connector', () => {
 
   describe('assets()', () => {
     it('returns an empty array', async () => {
-      expect(await connector.assets()).to.be.equal([]);
+      expect(await connector.assets()).to.deep.equal([]);
     });
   });
 
@@ -185,15 +192,15 @@ describe('EVM Wallet Connector', () => {
     });
 
     it('throws error for invalid address', async () => {
-      expect(await connector.getWallet('0x123')).throws('Invalid account');
+      await expect(connector.getWallet('0x123')).to.be.rejectedWith(
+        'Invalid account'
+      );
     });
   });
 
   describe('getProvider()', () => {
     it('returns the fuel provider', async () => {
-      let provider = await connector.getProvider();
-
-      expect(provider).to.be.equal(connector.fuelProvider);
+      expect(await connector.getProvider()).to.be.equal(fuelProvider);
     });
   });
 
@@ -205,7 +212,9 @@ describe('EVM Wallet Connector', () => {
 
   describe('getAbi()', () => {
     it('throws error', async () => {
-      expect(await connector.getAbi('contractId')).throws('Cannot get ABI');
+      await expect(connector.getAbi('contractId')).to.be.rejectedWith(
+        'Cannot get ABI'
+      );
     });
   });
 
@@ -220,9 +229,9 @@ describe('EVM Wallet Connector', () => {
       let network = await connector.network();
 
       expect(network.id).to.be.equal(
-        (await connector.fuelProvider.getChainId()).toString()
+        (await fuelProvider.getNetwork()).chainId.toString()
       );
-      expect(network.url).to.be.equal(connector.fuelProvider.url);
+      expect(network.url).to.be.equal(fuelProvider.url);
     });
   });
 
@@ -232,17 +241,17 @@ describe('EVM Wallet Connector', () => {
       let network = networks.pop();
 
       expect(network!.id).to.be.equal(
-        (await connector.fuelProvider.getChainId()).toString()
+        (await connector.fuelProvider.getNetwork()).chainId.toString()
       );
-      expect(network!.url).to.be.equal(connector.fuelProvider.url);
+      expect(network!.url).to.be.equal(fuelProvider.url);
     });
   });
 
   describe('addNetwork()', () => {
     it('throws error', async () => {
-      expect(await connector.addNetwork({ name: '', url: '' })).throws(
-        'Not Implemented.'
-      );
+      await expect(
+        connector.addNetwork({ name: '', url: '' })
+      ).to.be.rejectedWith('Not Implemented.');
     });
   });
 });
