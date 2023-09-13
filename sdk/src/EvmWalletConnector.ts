@@ -120,36 +120,24 @@ export class EVMWalletConnector extends FuelWalletConnection {
 
     let ethAccount = await this.ethSigner!.getAddress();
 
-    if (signer === null) {
-      let ethAccount = await this.ethSigner!.getAddress();
-
-      const transactionRequest = transactionRequestify(transaction);
-      const chainId = (
-        await this.fuelProvider.getChain()
-      ).consensusParameters.chainId.toNumber();
-      const txID = hashTransaction(transactionRequest, chainId);
-
-      const signature = await this.ethSigner!.signMessage(txID);
-
-      // TODO: this may be an issue - testing needed
-      transactionRequest.witnesses.push(signature);
-
-      let response =
-        await this.fuelProvider.sendTransaction(transactionRequest);
-
-      console.log(response);
-    } else {
-      if (ethAccount !== signer) {
-        let ethAccounts: Array<string> = await this.ethProvider.send(
-          'eth_accounts',
-          []
-        );
-
-        if (!ethAccounts.includes(signer!.toLowerCase())) {
-          throw Error('Invalid signing account');
-        }
-      }
+    if (signer !== null && signer !== ethAccount) {
+      this.ethSigner = await this.ethProvider.getSigner(signer!.toLowerCase());
     }
+
+    const transactionRequest = transactionRequestify(transaction);
+    const chainId = (
+      await this.fuelProvider.getChain()
+    ).consensusParameters.chainId.toNumber();
+    const txID = hashTransaction(transactionRequest, chainId);
+
+    const signature = await this.ethSigner!.signMessage(txID);
+
+    // TODO: this may be an issue - testing needed
+    transactionRequest.witnesses.push(signature);
+
+    let response = await this.fuelProvider.sendTransaction(transactionRequest);
+
+    console.log(response);
 
     return 'testing sendMsg';
   }
