@@ -11,7 +11,7 @@ import {
 import { JsonRpcProvider } from 'ethers';
 import { readFileSync } from 'fs';
 import { hexlify } from '@ethersproject/bytes';
-import { InputValue, Predicate } from 'fuels';
+import { InputValue, Predicate, EvmAddress, Address } from 'fuels';
 
 chai.use(chaiAsPromised);
 
@@ -31,7 +31,9 @@ describe('EVM Wallet Connector', () => {
   let predicateAccount1: string;
   let predicateAccount2: string;
 
-  async function createPredicate(): Promise<Predicate<InputValue[]>> {
+  async function createPredicate(
+    configurables: { [name: string]: unknown } | undefined
+  ): Promise<Predicate<InputValue[]>> {
     let filePathBin = '../simple-predicate/out/debug/simple-predicate.bin';
     let filePathABI = '../simple-predicate/out/debug/simple-predicate-abi.json';
     let predicateBinary = hexlify(readFileSync(filePathBin));
@@ -42,31 +44,22 @@ describe('EVM Wallet Connector', () => {
       predicateBinary,
       chainId,
       predicateABI,
-      fuelProvider
+      fuelProvider,
+      configurables
     );
 
     return predicate;
   }
 
-  async function setPredicateAccount(
-    predicate: Predicate<InputValue[]>,
-    ethAccount: string,
-    predicateAccount: string
-  ) {
-    let configurable = { SIGNER: ethAccount };
-    predicate.setData(configurable.SIGNER);
-    predicateAccount = predicate.address.toAddress();
-  }
-
   before(async () => {
     // Fetch the signing accounts from hardhat
     let signers = await ethers.getSigners();
-    ethAccount1 = signers.pop()!.address;
-    ethAccount2 = signers.pop()!.address;
+    ethAccount1 = signers[0]!.address;
+    ethAccount2 = signers[1]!.address;
 
     // Setting the providers once should not cause issues
     // Create the Ethereum provider
-    ethProvider = new ethers.JsonRpcProvider();
+    ethProvider = new ethers.JsonRpcProvider('http://localhost:8545');
 
     // Create the Fuel provider
     let walletConnection = new FuelWalletConnection({
@@ -78,9 +71,17 @@ describe('EVM Wallet Connector', () => {
     );
 
     // Create the predicate and calculate the address for each Ethereum account
-    let predicate = await createPredicate();
-    await setPredicateAccount(predicate, ethAccount1, predicateAccount1);
-    await setPredicateAccount(predicate, ethAccount2, predicateAccount2);
+    let paddedAcc1 = ethAccount1.replace('0x', '0x000000000000000000000000');
+    let paddedAcc2 = ethAccount2.replace('0x', '0x000000000000000000000000');
+
+    let configurable1 = { SIGNER: Address.fromB256(paddedAcc1).toEvmAddress() };
+    let configurable2 = { SIGNER: Address.fromB256(paddedAcc2).toEvmAddress() };
+
+    let predicate1 = await createPredicate(configurable1);
+    let predicate2 = await createPredicate(configurable2);
+
+    predicateAccount1 = predicate1.address.toAddress();
+    predicateAccount2 = predicate2.address.toAddress();
   });
 
   beforeEach(() => {
@@ -134,8 +135,8 @@ describe('EVM Wallet Connector', () => {
       await connector.connect();
 
       let predicateAccounts = await connector.accounts();
-      let acc1 = predicateAccounts.pop();
-      let acc2 = predicateAccounts.pop();
+      let acc1 = predicateAccounts[0];
+      let acc2 = predicateAccounts[1];
 
       expect(acc1).to.be.equal(predicateAccount1);
       expect(acc2).to.be.equal(predicateAccount2);
@@ -186,7 +187,7 @@ describe('EVM Wallet Connector', () => {
     it('returns a predicate wallet', async () => {
       let wallet = await connector.getWallet(ethAccount1);
 
-      expect(wallet).to.be.equal(
+      expect(wallet).to.deep.equal(
         new FuelWalletLocked(predicateAccount1, fuelProvider)
       );
     });

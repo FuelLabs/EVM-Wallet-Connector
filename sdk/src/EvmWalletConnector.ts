@@ -12,7 +12,7 @@ import {
   FuelWalletLocked,
   FuelWalletProvider
 } from '@fuel-wallet/sdk';
-import { JsonAbi, TransactionRequestLike, Predicate } from 'fuels';
+import { JsonAbi, TransactionRequestLike, Predicate, Address } from 'fuels';
 import { JsonRpcProvider, Signer } from 'ethers';
 
 import { readFileSync } from 'fs';
@@ -64,17 +64,22 @@ export class EVMWalletConnector extends FuelWalletConnection {
 
     // Init predicate
     const chainId = await this.fuelProvider.getChainId();
-    const predicate = new Predicate(
-      this.predicateBinary,
-      chainId,
-      this.predicateABI,
-      this.fuelProvider
-    );
 
     // For each account set the configurable
     for (let index = 0; index < ethAccounts.length; index++) {
-      const configurable = { SIGNER: ethAccounts[index] };
-      predicate.setData(configurable.SIGNER);
+      const configurable = {
+        SIGNER: Address.fromB256(
+          ethAccounts[index]!.replace('0x', '0x000000000000000000000000')
+        ).toEvmAddress()
+      };
+
+      const predicate = new Predicate(
+        this.predicateBinary,
+        chainId,
+        this.predicateABI,
+        this.fuelProvider,
+        configurable
+      );
       predicateAccounts.push(predicate.address.toAddress());
     }
 
@@ -82,20 +87,23 @@ export class EVMWalletConnector extends FuelWalletConnection {
   }
 
   async currentAccount(): Promise<string> {
-    let ethAccount = this.ethSigner?.getAddress();
+    let ethAccount = await this.ethSigner?.getAddress();
 
     // Init predicate
+    const configurable = {
+      SIGNER: Address.fromB256(
+        ethAccount!.replace('0x', '0x000000000000000000000000')
+      ).toEvmAddress()
+    };
+
     const chainId = await this.fuelProvider.getChainId();
     const predicate = new Predicate(
       this.predicateBinary,
       chainId,
       this.predicateABI,
-      this.fuelProvider
+      this.fuelProvider,
+      configurable
     );
-
-    // Set the account configurable
-    const configurable = { SIGNER: ethAccount };
-    predicate.setData(await configurable.SIGNER);
 
     // Get the address of predicate
     let account = predicate.address.toAddress();
@@ -138,20 +146,23 @@ export class EVMWalletConnector extends FuelWalletConnection {
       []
     );
 
-    if (!ethAccounts.includes(address)) {
+    if (!ethAccounts.includes(address.toLowerCase())) {
       throw Error('Invalid account');
     }
 
+    const configurable = {
+      SIGNER: Address.fromB256(
+        address.replace('0x', '0x000000000000000000000000')
+      ).toEvmAddress()
+    };
     const chainId = await this.fuelProvider.getChainId();
     const predicate = new Predicate(
       this.predicateBinary,
       chainId,
       this.predicateABI,
-      this.fuelProvider
+      this.fuelProvider,
+      configurable
     );
-
-    const configurable = { SIGNER: address };
-    predicate.setData(configurable.SIGNER);
 
     return new FuelWalletLocked(predicate.address.toAddress(), provider);
   }

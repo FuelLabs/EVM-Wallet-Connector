@@ -10,5 +10,5 @@ configurable {
 }
 
 fn main() -> bool {
-    true
+    SIGNER == SIGNER
 }
