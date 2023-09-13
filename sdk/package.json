@@ -6,9 +6,10 @@
 		"@types/chrome": "^0.0.245",
 		"@types/react": "^18.2.21",
 		"ethers": "^6.7.1",
-		"fuels": "^0.53.0"
+		"fuels": "^0.56.0"
 	},
 	"devDependencies": {
+		"@fuel-ts/wallet": "^0.56.0",
 		"@fuels/ts-config": "^0.0.7",
 		"@nomicfoundation/hardhat-ethers": "^3.0.4",
 		"@nomicfoundation/hardhat-toolbox": "^3.0.0",

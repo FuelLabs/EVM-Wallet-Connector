@@ -1,4 +1,4 @@
-import chai, { assert, expect } from 'chai';
+import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
 import { ethers } from 'hardhat';
@@ -11,7 +11,17 @@ import {
 import { JsonRpcProvider } from 'ethers';
 import { readFileSync } from 'fs';
 import { hexlify } from '@ethersproject/bytes';
-import { InputValue, Predicate, EvmAddress, Address } from 'fuels';
+import {
+  InputValue,
+  Predicate,
+  Address,
+  Wallet,
+  BaseAssetId,
+  FUEL_NETWORK_URL,
+  Provider,
+  ScriptTransactionRequest
+} from 'fuels';
+import { generateTestWallet } from '@fuel-ts/wallet/test-utils';
 
 chai.use(chaiAsPromised);
 
@@ -65,6 +75,8 @@ describe('EVM Wallet Connector', () => {
     let walletConnection = new FuelWalletConnection({
       name: 'EVM-Wallet-Connector'
     });
+
+    // TODO: local fuel provider https://fuellabs.github.io/fuels-ts/guide/testing/
     fuelProvider = new FuelWalletProvider(
       'https://beta-4.fuel.network/graphql',
       walletConnection
@@ -151,18 +163,83 @@ describe('EVM Wallet Connector', () => {
 
       expect(account).to.be.equal(predicateAccount1);
     });
+
+    it('throws error when not connected', async () => {
+      await expect(connector.currentAccount()).to.be.rejectedWith(
+        'No connected accounts'
+      );
+    });
   });
 
   describe('signMessage()', () => {
     it('throws error', async () => {
       await expect(
         connector.signMessage('address', 'message')
-      ).to.be.rejectedWith('Not Implemented.');
+      ).to.be.rejectedWith('Not implemented');
     });
   });
 
-  xit('sendTransaction()', () => {
-    assert.equal(true, false);
+  describe('sendTransaction()', () => {
+    const assetId =
+      '0x0101010101010101010101010101010101010101010101010101010101010101';
+
+    xit('sends when signer is not passed in', async () => {
+      const provider = new Provider(FUEL_NETWORK_URL);
+
+      const fundingWallet = await generateTestWallet(provider, [
+        [5_000, BaseAssetId],
+        [5_000, assetId]
+      ]);
+
+      const recipientWallet = Wallet.generate();
+      const amountToTransfer = 1000;
+
+      let paddedAcc = ethAccount1.replace('0x', '0x000000000000000000000000');
+      let configurable = { SIGNER: Address.fromB256(paddedAcc).toEvmAddress() };
+      let predicate = await createPredicate(configurable);
+
+      // transfer base asset to predicate so it can transfer to receiver
+      const tx1 = await fundingWallet.transfer(
+        predicate.address,
+        amountToTransfer,
+        BaseAssetId
+      );
+      await tx1.waitForResult();
+
+      // transfer base asset to recipient to pay the fees
+      const tx2 = await fundingWallet.transfer(
+        recipientWallet.address,
+        amountToTransfer
+      );
+      await tx2.waitForResult();
+
+      const request = new ScriptTransactionRequest({
+        gasLimit: 1000,
+        gasPrice: 1
+      });
+
+      // fetch predicate resources to spend
+      const predicateResoruces = await predicate.getResourcesToSpend([
+        [amountToTransfer, BaseAssetId]
+      ]);
+
+      request
+        .addResources(recipientWallet)
+        .addPredicateResources(predicateResoruces, predicate)
+        .addCoinOutput(recipientWallet.address, amountToTransfer, assetId);
+
+      const recipientBaseAssetBefore = await recipientWallet.getBalance();
+      const recipientAssetABefore = await recipientWallet.getBalance(assetId);
+      const predicateAssetABefore = await predicate.getBalance(assetId);
+
+      // call connector
+      await connector.connect();
+      let r = await connector.sendTransaction(request, { url: '' });
+
+      const recipientBaseAssetAfter = await recipientWallet.getBalance();
+      const recipientAssetAAfter = await recipientWallet.getBalance(assetId);
+      const predicateAssetAAfter = await predicate.getBalance(assetId);
+    });
   });
 
   describe('assets()', () => {
@@ -214,7 +291,7 @@ describe('EVM Wallet Connector', () => {
   describe('getAbi()', () => {
     it('throws error', async () => {
       await expect(connector.getAbi('contractId')).to.be.rejectedWith(
-        'Cannot get ABI'
+        'Cannot get contractId ABI for a predicate'
       );
     });
   });
@@ -252,7 +329,7 @@ describe('EVM Wallet Connector', () => {
     it('throws error', async () => {
       await expect(
         connector.addNetwork({ name: '', url: '' })
-      ).to.be.rejectedWith('Not Implemented.');
+      ).to.be.rejectedWith('Not implemented');
     });
   });
 });

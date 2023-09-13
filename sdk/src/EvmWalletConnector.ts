@@ -12,7 +12,14 @@ import {
   FuelWalletLocked,
   FuelWalletProvider
 } from '@fuel-wallet/sdk';
-import { JsonAbi, TransactionRequestLike, Predicate, Address } from 'fuels';
+import {
+  JsonAbi,
+  TransactionRequestLike,
+  Predicate,
+  Address,
+  transactionRequestify,
+  hashTransaction
+} from 'fuels';
 import { JsonRpcProvider, Signer } from 'ethers';
 
 import { readFileSync } from 'fs';
@@ -62,58 +69,40 @@ export class EVMWalletConnector extends FuelWalletConnection {
     );
     let predicateAccounts: Array<string> = [];
 
-    // Init predicate
-    const chainId = await this.fuelProvider.getChainId();
-
     // For each account set the configurable
     for (let index = 0; index < ethAccounts.length; index++) {
-      const configurable = {
-        SIGNER: Address.fromB256(
-          ethAccounts[index]!.replace('0x', '0x000000000000000000000000')
-        ).toEvmAddress()
-      };
-
-      const predicate = new Predicate(
-        this.predicateBinary,
-        chainId,
-        this.predicateABI,
+      let account = await getPredicateAccount(
+        ethAccounts[index]!,
         this.fuelProvider,
-        configurable
+        this.predicateBinary,
+        this.predicateABI
       );
-      predicateAccounts.push(predicate.address.toAddress());
+
+      predicateAccounts.push(account);
     }
 
     return predicateAccounts;
   }
 
   async currentAccount(): Promise<string> {
-    let ethAccount = await this.ethSigner?.getAddress();
+    if (!(await this.isConnected())) {
+      throw Error('No connected accounts');
+    }
 
-    // Init predicate
-    const configurable = {
-      SIGNER: Address.fromB256(
-        ethAccount!.replace('0x', '0x000000000000000000000000')
-      ).toEvmAddress()
-    };
-
-    const chainId = await this.fuelProvider.getChainId();
-    const predicate = new Predicate(
-      this.predicateBinary,
-      chainId,
-      this.predicateABI,
+    let ethAccount = await this.ethSigner!.getAddress();
+    let account = await getPredicateAccount(
+      ethAccount,
       this.fuelProvider,
-      configurable
+      this.predicateBinary,
+      this.predicateABI
     );
-
-    // Get the address of predicate
-    let account = predicate.address.toAddress();
 
     return account;
   }
 
   async signMessage(address: string, message: string): Promise<string> {
-    // Dev: a predicate "account" cannot sign
-    throw new Error('Not Implemented.');
+    // A predicate "account" cannot sign
+    throw new Error('Not implemented');
   }
 
   async sendTransaction(
@@ -121,7 +110,48 @@ export class EVMWalletConnector extends FuelWalletConnection {
     providerConfig: FuelProviderConfig,
     signer?: string
   ): Promise<string> {
-    return 'Placeholder';
+    // transaction: dapp builds script externally and passes it in
+    // providerConfig: url of provider to send to
+    // signer: which account to use (predicate)
+
+    if (!(await this.isConnected())) {
+      throw Error('No connected accounts');
+    }
+
+    let ethAccount = await this.ethSigner!.getAddress();
+
+    if (signer === null) {
+      let ethAccount = await this.ethSigner!.getAddress();
+
+      const transactionRequest = transactionRequestify(transaction);
+      const chainId = (
+        await this.fuelProvider.getChain()
+      ).consensusParameters.chainId.toNumber();
+      const txID = hashTransaction(transactionRequest, chainId);
+
+      const signature = await this.ethSigner!.signMessage(txID);
+
+      // TODO: this may be an issue - testing needed
+      transactionRequest.witnesses.push(signature);
+
+      let response =
+        await this.fuelProvider.sendTransaction(transactionRequest);
+
+      console.log(response);
+    } else {
+      if (ethAccount !== signer) {
+        let ethAccounts: Array<string> = await this.ethProvider.send(
+          'eth_accounts',
+          []
+        );
+
+        if (!ethAccounts.includes(signer!.toLowerCase())) {
+          throw Error('Invalid signing account');
+        }
+      }
+    }
+
+    return 'testing sendMsg';
   }
 
   async assets(): Promise<Array<Asset>> {
@@ -129,12 +159,12 @@ export class EVMWalletConnector extends FuelWalletConnection {
   }
 
   async addAsset(asset: Asset): Promise<boolean> {
-    console.warn('A predicate account cannot add an asset.');
+    console.warn('A predicate account cannot add an asset');
     return false;
   }
 
   async addAssets(assets: Asset[]): Promise<boolean> {
-    console.warn('A predicate account cannot add assets.');
+    console.warn('A predicate account cannot add assets');
     return false;
   }
 
@@ -150,21 +180,14 @@ export class EVMWalletConnector extends FuelWalletConnection {
       throw Error('Invalid account');
     }
 
-    const configurable = {
-      SIGNER: Address.fromB256(
-        address.replace('0x', '0x000000000000000000000000')
-      ).toEvmAddress()
-    };
-    const chainId = await this.fuelProvider.getChainId();
-    const predicate = new Predicate(
-      this.predicateBinary,
-      chainId,
-      this.predicateABI,
+    let account = await getPredicateAccount(
+      address,
       this.fuelProvider,
-      configurable
+      this.predicateBinary,
+      this.predicateABI
     );
 
-    return new FuelWalletLocked(predicate.address.toAddress(), provider);
+    return new FuelWalletLocked(account, provider);
   }
 
   async getProvider(): Promise<FuelWalletProvider> {
@@ -172,12 +195,12 @@ export class EVMWalletConnector extends FuelWalletConnection {
   }
 
   async addAbi(abiMap: AbiMap): Promise<boolean> {
-    console.warn('Cannot add an ABI to a predicate account.');
+    console.warn('Cannot add an ABI to a predicate account');
     return false;
   }
 
   async getAbi(contractId: string): Promise<JsonAbi> {
-    throw Error('Cannot get ABI');
+    throw Error('Cannot get contractId ABI for a predicate');
   }
 
   async hasAbi(contractId: string): Promise<boolean> {
@@ -185,6 +208,7 @@ export class EVMWalletConnector extends FuelWalletConnection {
   }
 
   async network(): Promise<FuelProviderConfig> {
+    // TODO: look into chain IDs and raise possible bug issue
     let network = await this.fuelProvider.getNetwork();
     return { id: network.chainId.toString(), url: this.fuelProvider.url };
   }
@@ -194,7 +218,7 @@ export class EVMWalletConnector extends FuelWalletConnection {
   }
 
   async addNetwork(network: Network): Promise<boolean> {
-    throw new Error('Not Implemented.');
+    throw new Error('Not implemented');
   }
 
   // on<E extends FuelEvents['type'], D extends FuelEventArg<E>>(
@@ -203,4 +227,27 @@ export class EVMWalletConnector extends FuelWalletConnection {
   // ): this {
   //   return super.on(eventName, listener);
   // }
+}
+
+async function getPredicateAccount(
+  ethAddress: string,
+  fuelProvider: FuelWalletProvider,
+  predicateBinary: string,
+  predicateABI: JsonAbi
+): Promise<string> {
+  const configurable = {
+    SIGNER: Address.fromB256(
+      ethAddress.replace('0x', '0x000000000000000000000000')
+    ).toEvmAddress()
+  };
+  const chainId = await fuelProvider.getChainId();
+  const predicate = new Predicate(
+    predicateBinary,
+    chainId,
+    predicateABI,
+    fuelProvider,
+    configurable
+  );
+
+  return predicate.address.toAddress();
 }
