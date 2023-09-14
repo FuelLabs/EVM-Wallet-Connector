@@ -120,7 +120,7 @@ export class EVMWalletConnector extends FuelWalletConnection {
 
     let ethAccount = await this.ethSigner!.getAddress();
 
-    if (signer !== null && signer !== ethAccount) {
+    if (signer !== undefined && signer !== ethAccount) {
       this.ethSigner = await this.ethProvider.getSigner(signer!.toLowerCase());
     }
 

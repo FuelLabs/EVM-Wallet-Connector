@@ -21,7 +21,8 @@ import {
   Provider,
   ScriptTransactionRequest,
   WalletUnlocked,
-  CoinQuantityLike
+  CoinQuantityLike,
+  coinQuantityfy
 } from 'fuels';
 import { generateTestWallet } from '@fuel-ts/wallet/test-utils';
 
@@ -185,11 +186,13 @@ describe('EVM Wallet Connector', () => {
       '0x0101010101010101010101010101010101010101010101010101010101010101';
 
     it('sends when signer is not passed in', async () => {
+      let paddedAcc = ethAccount1.replace('0x', '0x000000000000000000000000');
+      let configurable = { SIGNER: Address.fromB256(paddedAcc).toEvmAddress() };
+      let predicate = await createPredicate(configurable);
+
       const provider = new Provider(FUEL_NETWORK_URL);
       const recipientWallet = Wallet.generate({ provider });
-      console.log("generating wallet");
       const fundingWallet = new WalletUnlocked('0x01', provider);
-      console.log("generating wallet2");
 
       const quantities: CoinQuantityLike[] = [
         {
@@ -201,72 +204,73 @@ describe('EVM Wallet Connector', () => {
             assetId: assetId,
           },
       ];
-      console.log("generating wallet3");
-
       const resources = await fundingWallet.getResourcesToSpend(quantities);
-      console.log("generating wallet4");
-      console.log(resources);
-      console.log(2222);
 
-      // const fundingWallet = await generateTestWallet(provider, [
-      //   [5_000, BaseAssetId],
-      //   [5_000, assetId]
-      // ]);
-      console.log("created wallet");
-      const amountToTransfer = 1000;
+      const request = new ScriptTransactionRequest({
+        gasLimit: 10000,
+        gasPrice: 1,
+      });
+      request.addResources(resources);
+      quantities
+        .map(coinQuantityfy)
+        .forEach(({ amount, assetId }) => {
+          if (assetId === BaseAssetId) {
+            // transfer base asset to recipient to pay the fees
+            request.addCoinOutput(recipientWallet.address, 50000, assetId)
+          } else {
+            // transfer base asset to predicate so it can transfer to receiver
+            request.addCoinOutput(predicate.address, 2000, assetId)
+          }
+        });
 
-      // let paddedAcc = ethAccount1.replace('0x', '0x000000000000000000000000');
-      // let configurable = { SIGNER: Address.fromB256(paddedAcc).toEvmAddress() };
-      // let predicate = await createPredicate(configurable);
+      const response = await fundingWallet.sendTransaction(request);
 
-      // // transfer base asset to predicate so it can transfer to receiver
-      // const tx1 = await fundingWallet.transfer(
-      //   predicate.address,
-      //   amountToTransfer*2,
-      //   assetId
-      // );
-      // await tx1.waitForResult();
+      await response.wait();
+      const assetBalance = await predicate.getBalance(assetId);
+      const assetBalance2 = await recipientWallet.getBalance(BaseAssetId);
+      console.log("predicate 0x10101..", assetBalance.toString());
+      console.log("recipient 0x0000...", assetBalance2.toString());
 
-      // // transfer base asset to recipient to pay the fees
-      // const tx2 = await fundingWallet.transfer(
-      //   recipientWallet.address,
-      //   amountToTransfer*2
-      // );
-      // await tx2.waitForResult();
+      const amountToTransfer = 10;
+      // fetch predicate resources to spend
+      const request2 = new ScriptTransactionRequest({
+        gasLimit: 10000,
+        gasPrice: 1,
+      });
 
-      // const request = new ScriptTransactionRequest({
-      //   gasLimit: 1000,
-      //   gasPrice: 1
-      // });
+      const predicateResoruces = await predicate.getResourcesToSpend([
+        [amountToTransfer, assetId]
+      ]);
+      const recipientResources = await recipientWallet.getResourcesToSpend([[request.gasLimit, BaseAssetId]]);
 
-      // // fetch predicate resources to spend
-      // const predicateResoruces = await predicate.getResourcesToSpend([
-      //   [amountToTransfer, assetId]
-      // ]);
-      // const recipientResources = await recipientWallet.getResourcesToSpend([[request.gasLimit, BaseAssetId]]);
-      // console.log(recipientResources);
+      request2
+        .addResources(recipientResources)
+        .addPredicateResources(predicateResoruces, predicate)
+        .addCoinOutput(recipientWallet.address, amountToTransfer, assetId);
 
-      // request
-      //   .addResources(recipientResources)
-      //   .addPredicateResources(predicateResoruces, predicate)
-      //   .addCoinOutput(recipientWallet.address, amountToTransfer, assetId);
+      const recipientBaseAssetBefore = await recipientWallet.getBalance();
+      const recipientAssetABefore = await recipientWallet.getBalance(assetId);
+      const predicateAssetABefore = await predicate.getBalance(assetId);
 
-      // const recipientBaseAssetBefore = await recipientWallet.getBalance();
-      // const recipientAssetABefore = await recipientWallet.getBalance(assetId);
-      // const predicateAssetABefore = await predicate.getBalance(assetId);
+      console.log("recipientBaseAssetBefore", recipientBaseAssetBefore.toString());
+      console.log("recipientAssetABefore", recipientAssetABefore.toString());
+      console.log("predicateAssetABefore", predicateAssetABefore.toString());
 
       // call connector
-      // await connector.connect();
-      // let r = await connector.sendTransaction(request, { url: '' });
+      await connector.connect();
+      let r = await connector.sendTransaction(request2, { url: '' });
 
-      const tx3 = await recipientWallet.sendTransaction(request);
-      console.log(tx3);
+      // const tx3 = await recipientWallet.sendTransaction(request2);
 
-      await tx3.waitForResult();
+      // await tx3.waitForResult();
 
-      // const recipientBaseAssetAfter = await recipientWallet.getBalance();
-      // const recipientAssetAAfter = await recipientWallet.getBalance(assetId);
-      // const predicateAssetAAfter = await predicate.getBalance(assetId);
+      const recipientBaseAssetAfter = await recipientWallet.getBalance();
+      const recipientAssetAAfter = await recipientWallet.getBalance(assetId);
+      const predicateAssetAAfter = await predicate.getBalance(assetId);
+
+      console.log("recipientBaseAssetAfter", recipientBaseAssetAfter.toString());
+      console.log("recipientAssetAAfter", recipientAssetAAfter.toString());
+      console.log("predicateAssetAAfter", predicateAssetAAfter.toString());
     });
   });
 
