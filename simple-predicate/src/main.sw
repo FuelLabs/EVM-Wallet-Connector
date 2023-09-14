@@ -9,6 +9,6 @@ configurable {
     },
 }
 
-fn main() -> bool {
-    SIGNER == SIGNER
+fn main(signer: EvmAddress) -> bool {
+    signer == SIGNER
 }
