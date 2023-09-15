@@ -30,8 +30,9 @@ import { hexlify } from '@ethersproject/bytes';
 export class EVMWalletConnector {
   ethProvider: JsonRpcProvider;
   fuelProvider: Provider;
-  // fuelProvider: FuelWalletProvider;
   ethSigner: Signer | null;
+  // Todo: change to array of tuples. <(eth account, predicate account)>
+  predicateAccounts: Array<string>;
 
   predicateBinary = hexlify(
     readFileSync('../simple-predicate/out/debug/simple-predicate.bin')
@@ -43,12 +44,11 @@ export class EVMWalletConnector {
     )
   );
 
-  // constructor(ethProvider: JsonRpcProvider, fuelProvider: FuelWalletProvider) {
-    constructor(ethProvider: JsonRpcProvider, fuelProvider: Provider) {
-    // super({ name: 'EVM-Wallet-Connector' }); // TODO: add icon later
+  constructor(ethProvider: JsonRpcProvider, fuelProvider: Provider) {
     this.ethProvider = ethProvider;
     this.fuelProvider = fuelProvider;
     this.ethSigner = null;
+    this.predicateAccounts = [];
   }
 
   async isConnected(): Promise<boolean> {
@@ -62,6 +62,7 @@ export class EVMWalletConnector {
 
   async disconnect(): Promise<boolean> {
     this.ethSigner = null;
+    this.predicateAccounts = [];
     return true;
   }
 
@@ -71,9 +72,14 @@ export class EVMWalletConnector {
       'eth_accounts',
       []
     );
-    let predicateAccounts: Array<string> = [];
 
-    // For each account set the configurable
+    // If the user has not added any accounts then 
+    // return the previously generated predicate accounts
+    if (ethAccounts.length === this.predicateAccounts.length) {
+      return this.predicateAccounts;
+    }
+
+    // For each ethereum account set the configurable and generate the predicate address
     for (let index = 0; index < ethAccounts.length; index++) {
       let account = await getPredicateAccount(
         ethAccounts[index]!,
@@ -82,10 +88,18 @@ export class EVMWalletConnector {
         this.predicateABI
       );
 
-      predicateAccounts.push(account);
+      // If this is a new account then add it to our cache
+      if (!this.predicateAccounts.includes(account)) {
+        this.predicateAccounts.push(account);
+      }
+
+      // If accounts match then exit early
+      if (ethAccounts.length === this.predicateAccounts.length) {
+        break;
+      }
     }
 
-    return predicateAccounts;
+    return this.predicateAccounts;
   }
 
   async currentAccount(): Promise<string> {
@@ -114,14 +128,13 @@ export class EVMWalletConnector {
     providerConfig: FuelProviderConfig,
     signer?: string
   ): Promise<string> {
-    // transaction: dapp builds script externally and passes it in
-    // providerConfig: url of provider to send to
-    // signer: which account to use (predicate)
-
     if (!(await this.isConnected())) {
       throw Error('No connected accounts');
     }
 
+    // TODO: signer should be a predicate account
+    // check if valid account this.predicateAccounts
+    // iterate over
     let ethAccount = await this.ethSigner!.getAddress();
 
     if (signer !== undefined && signer !== ethAccount) {
@@ -132,13 +145,10 @@ export class EVMWalletConnector {
     const chainId = (
       await this.fuelProvider.getChain()
     ).consensusParameters.chainId.toNumber();
-    console.log(chainId);
     const txID = hashTransaction(transactionRequest, chainId);
-    console.log(txID);
 
     const signature = await this.ethSigner!.signMessage(txID);
 
-    // TODO: this may be an issue - testing needed
     transactionRequest.witnesses.push(signature);
 
     let response = await this.fuelProvider.sendTransaction(transactionRequest);
@@ -161,6 +171,7 @@ export class EVMWalletConnector {
   }
 
   async getWallet(address: string): Promise<FuelWalletLocked> {
+    // TODO: predicate address
     const provider = await this.getProvider();
 
     let ethAccounts: Array<string> = await this.ethProvider.send(
@@ -200,7 +211,6 @@ export class EVMWalletConnector {
   }
 
   async network(): Promise<FuelProviderConfig> {
-    // TODO: look into chain IDs and raise possible bug issue
     let network = await this.fuelProvider.getNetwork();
     return { id: network.chainId.toString(), url: this.fuelProvider.url };
   }
@@ -223,7 +233,7 @@ export class EVMWalletConnector {
 
 async function getPredicateAccount(
   ethAddress: string,
-  fuelProvider: FuelWalletProvider,
+  fuelProvider: Provider,
   predicateBinary: string,
   predicateABI: JsonAbi
 ): Promise<string> {
