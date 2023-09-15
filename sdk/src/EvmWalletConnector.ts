@@ -18,16 +18,19 @@ import {
   Predicate,
   Address,
   transactionRequestify,
-  hashTransaction
+  hashTransaction,
+  Provider
 } from 'fuels';
 import { JsonRpcProvider, Signer } from 'ethers';
 
 import { readFileSync } from 'fs';
 import { hexlify } from '@ethersproject/bytes';
 
-export class EVMWalletConnector extends FuelWalletConnection {
+// export class EVMWalletConnector extends FuelWalletConnection {
+export class EVMWalletConnector {
   ethProvider: JsonRpcProvider;
-  fuelProvider: FuelWalletProvider;
+  fuelProvider: Provider;
+  // fuelProvider: FuelWalletProvider;
   ethSigner: Signer | null;
 
   predicateBinary = hexlify(
@@ -40,8 +43,9 @@ export class EVMWalletConnector extends FuelWalletConnection {
     )
   );
 
-  constructor(ethProvider: JsonRpcProvider, fuelProvider: FuelWalletProvider) {
-    super({ name: 'EVM-Wallet-Connector' }); // TODO: add icon later
+  // constructor(ethProvider: JsonRpcProvider, fuelProvider: FuelWalletProvider) {
+    constructor(ethProvider: JsonRpcProvider, fuelProvider: Provider) {
+    // super({ name: 'EVM-Wallet-Connector' }); // TODO: add icon later
     this.ethProvider = ethProvider;
     this.fuelProvider = fuelProvider;
     this.ethSigner = null;
@@ -128,7 +132,9 @@ export class EVMWalletConnector extends FuelWalletConnection {
     const chainId = (
       await this.fuelProvider.getChain()
     ).consensusParameters.chainId.toNumber();
+    console.log(chainId);
     const txID = hashTransaction(transactionRequest, chainId);
+    console.log(txID);
 
     const signature = await this.ethSigner!.signMessage(txID);
 
@@ -137,9 +143,7 @@ export class EVMWalletConnector extends FuelWalletConnection {
 
     let response = await this.fuelProvider.sendTransaction(transactionRequest);
 
-    console.log(response);
-
-    return 'testing sendMsg';
+    return response.id;
   }
 
   async assets(): Promise<Array<Asset>> {
