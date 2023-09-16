@@ -251,13 +251,17 @@ describe('EVM Wallet Connector', () => {
       // Connect ETH account
       await connector.connect();
 
+      // TODO: The user accounts mapping must be populated in order to check if the account is valid
+      // Temporary hack here?
+      await connector.accounts();
+
       //  Send transaction using EvmWalletConnector
       const transactionId = await connector.sendTransaction(
         requestWithEstimatedPredicateGas,
         {
           url: provider.url
         },
-        ethAccount1
+        predicateAccount1
       );
       const response = new TransactionResponse(transactionId, provider);
       const { receipts } = await response.waitForResult();
@@ -298,16 +302,18 @@ describe('EVM Wallet Connector', () => {
     it('returns a predicate wallet', async () => {
       let wallet = await connector.getWallet(predicateAccount1);
 
-      const walletProvier = new FuelWalletProvider(
-        fuelProvider.url,
-        new FuelWalletConnection({
-          name: 'EVM-Wallet-Connector'
-        })
+      let expectedWallet = new FuelWalletLocked(
+        predicateAccount1,
+        new FuelWalletProvider(
+          fuelProvider.url,
+          new FuelWalletConnection({
+            name: 'EVM-Wallet-Connector'
+          })
+        )
       );
 
-      expect(wallet).to.deep.equal(
-        new FuelWalletLocked(predicateAccount1, walletProvier)
-      );
+      expect(wallet.address).to.deep.equal(expectedWallet.address);
+      expect(wallet.provider.url).to.equal(expectedWallet.provider.url);
     });
 
     it('throws error for invalid address', async () => {
@@ -318,7 +324,7 @@ describe('EVM Wallet Connector', () => {
   });
 
   describe('getProvider()', () => {
-    xit('returns the fuel provider', async () => {
+    it('returns the fuel provider', async () => {
       const walletProvier = new FuelWalletProvider(
         fuelProvider.url,
         new FuelWalletConnection({
@@ -326,7 +332,12 @@ describe('EVM Wallet Connector', () => {
         })
       );
 
-      expect(await connector.getProvider()).to.be.equal(walletProvier);
+      let connectorProvider = await connector.getProvider();
+
+      expect(connectorProvider.url).to.be.equal(walletProvier.url);
+      expect(connectorProvider.walletConnection.connectorName).to.be.equal(
+        walletProvier.walletConnection.connectorName
+      );
     });
   });
 

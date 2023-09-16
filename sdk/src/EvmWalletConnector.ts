@@ -144,19 +144,33 @@ export class EVMWalletConnector {
       throw Error('No connected accounts');
     }
 
-    // TODO: signer should be a predicate account
-    // check if valid account this.accounts
-    // iterate over
     let ethAccount = await this.ethSigner!.getAddress();
 
-    if (signer !== undefined && signer !== ethAccount) {
-      this.ethSigner = await this.ethProvider.getSigner(signer!.toLowerCase());
+    if (signer !== undefined) {
+      let validAccount = false;
+
+      for (const [ethAccountKey, predicateAccount] of this.userAccounts) {
+        if (signer === predicateAccount) {
+          if (ethAccount !== ethAccountKey) {
+            this.ethSigner = await this.ethProvider.getSigner(
+              ethAccountKey.toLowerCase()
+            );
+          }
+          ethAccount = ethAccountKey;
+          validAccount = true;
+
+          break;
+        }
+      }
+
+      if (!validAccount) {
+        throw Error('Invalid account');
+      }
     }
+    const chainInfo = await this.fuelProvider.getChain();
+    const chainId: number = +chainInfo.consensusParameters.chainId;
 
     const transactionRequest = transactionRequestify(transaction);
-    const chainId = (
-      await this.fuelProvider.getChain()
-    ).consensusParameters.chainId.toNumber();
     const txID = hashTransaction(transactionRequest, chainId);
 
     const signature = await this.ethSigner!.signMessage(txID);
