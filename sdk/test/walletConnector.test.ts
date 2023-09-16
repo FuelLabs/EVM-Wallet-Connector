@@ -29,7 +29,6 @@ import {
   TransactionResponse,
   CoinTransactionRequestOutput
 } from 'fuels';
-import { generateTestWallet } from '@fuel-ts/wallet/test-utils';
 
 chai.use(chaiAsPromised);
 
@@ -80,10 +79,6 @@ describe('EVM Wallet Connector', () => {
     ethProvider = new ethers.JsonRpcProvider('http://localhost:8545'); // TODO: switch hardhat node to local node for this?
 
     // Create the Fuel provider
-    let walletConnection = new FuelWalletConnection({
-      name: 'EVM-Wallet-Connector'
-    });
-
     fuelProvider = new Provider(FUEL_NETWORK_URL);
 
     // Create the predicate and calculate the address for each Ethereum account
@@ -105,83 +100,83 @@ describe('EVM Wallet Connector', () => {
     connector = new EVMWalletConnector(ethProvider, fuelProvider);
   });
 
-  // describe('connect()', () => {
-  //   it('connects to ethers signer', async () => {
-  //     let isNull = connector.ethSigner;
-  //     let connected = await connector.connect();
-  //     let isNotNull = connector.ethSigner;
+  describe('connect()', () => {
+    it('connects to ethers signer', async () => {
+      let isNull = connector.ethSigner;
+      let connected = await connector.connect();
+      let isNotNull = connector.ethSigner;
 
-  //     expect(isNull).to.be.null;
-  //     expect(connected).to.be.true;
-  //     expect(isNotNull).to.not.be.null;
-  //   });
-  // });
+      expect(isNull).to.be.null;
+      expect(connected).to.be.true;
+      expect(isNotNull).to.not.be.null;
+    });
+  });
 
-  // describe('isConnected()', () => {
-  //   it('false when not connected', async () => {
-  //     let connected = await connector.isConnected();
+  describe('isConnected()', () => {
+    it('false when not connected', async () => {
+      let connected = await connector.isConnected();
 
-  //     expect(connected).to.be.false;
-  //   });
+      expect(connected).to.be.false;
+    });
 
-  //   it('true when connected', async () => {
-  //     await connector.connect();
-  //     let connected = await connector.isConnected();
+    it('true when connected', async () => {
+      await connector.connect();
+      let connected = await connector.isConnected();
 
-  //     expect(connected).to.be.true;
-  //   });
-  // });
+      expect(connected).to.be.true;
+    });
+  });
 
-  // describe('disconnect()', () => {
-  //   it('disconnects from ethers signer', async () => {
-  //     await connector.connect();
+  describe('disconnect()', () => {
+    it('disconnects from ethers signer', async () => {
+      await connector.connect();
 
-  //     let isNotNull = connector.ethSigner;
-  //     let connected = await connector.disconnect();
-  //     let isNull = connector.ethSigner;
+      let isNotNull = connector.ethSigner;
+      let connected = await connector.disconnect();
+      let isNull = connector.ethSigner;
 
-  //     expect(isNotNull).to.not.be.null;
-  //     expect(connected).to.be.true;
-  //     expect(isNull).to.be.null;
-  //   });
-  // });
+      expect(isNotNull).to.not.be.null;
+      expect(connected).to.be.true;
+      expect(isNull).to.be.null;
+    });
+  });
 
-  // describe('accounts()', () => {
-  //   it('returns the predicate accounts associated with the wallet', async () => {
-  //     await connector.connect();
+  describe('accounts()', () => {
+    it('returns the predicate accounts associated with the wallet', async () => {
+      await connector.connect();
 
-  //     let predicateAccounts = await connector.accounts();
-  //     let acc1 = predicateAccounts[0];
-  //     let acc2 = predicateAccounts[1];
+      let predicateAccounts = await connector.accounts();
+      let acc1 = predicateAccounts[0];
+      let acc2 = predicateAccounts[1];
 
-  //     expect(acc1).to.be.equal(predicateAccount1);
-  //     expect(acc2).to.be.equal(predicateAccount2);
-  //   });
-  // });
+      expect(acc1).to.be.equal(predicateAccount1);
+      expect(acc2).to.be.equal(predicateAccount2);
+    });
+  });
 
-  // describe('currentAccount()', () => {
-  //   it('returns the predicate account associated with the current signer account', async () => {
-  //     await connector.connect();
+  describe('currentAccount()', () => {
+    it('returns the predicate account associated with the current signer account', async () => {
+      await connector.connect();
 
-  //     let account = await connector.currentAccount();
+      let account = await connector.currentAccount();
 
-  //     expect(account).to.be.equal(predicateAccount1);
-  //   });
+      expect(account).to.be.equal(predicateAccount1);
+    });
 
-  //   it('throws error when not connected', async () => {
-  //     await expect(connector.currentAccount()).to.be.rejectedWith(
-  //       'No connected accounts'
-  //     );
-  //   });
-  // });
+    it('throws error when not connected', async () => {
+      await expect(connector.currentAccount()).to.be.rejectedWith(
+        'No connected accounts'
+      );
+    });
+  });
 
-  // describe('signMessage()', () => {
-  //   it('throws error', async () => {
-  //     await expect(
-  //       connector.signMessage('address', 'message')
-  //     ).to.be.rejectedWith('Not implemented');
-  //   });
-  // });
+  describe('signMessage()', () => {
+    it('throws error', async () => {
+      await expect(
+        connector.signMessage('address', 'message')
+      ).to.be.rejectedWith('Not implemented');
+    });
+  });
 
   describe('sendTransaction()', () => {
     const ALT_ASSET_ID =
@@ -281,94 +276,108 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-  // describe('assets()', () => {
-  //   it('returns an empty array', async () => {
-  //     expect(await connector.assets()).to.deep.equal([]);
-  //   });
-  // });
+  describe('assets()', () => {
+    it('returns an empty array', async () => {
+      expect(await connector.assets()).to.deep.equal([]);
+    });
+  });
 
-  // describe('addAsset()', () => {
-  //   it('returns false', async () => {
-  //     expect(await connector.addAsset({ assetId: '' })).to.be.false;
-  //   });
-  // });
+  describe('addAsset()', () => {
+    it('returns false', async () => {
+      expect(await connector.addAsset({ assetId: '' })).to.be.false;
+    });
+  });
 
-  // describe('addAssets()', () => {
-  //   it('returns false', async () => {
-  //     expect(await connector.addAssets([])).to.be.false;
-  //   });
-  // });
+  describe('addAssets()', () => {
+    it('returns false', async () => {
+      expect(await connector.addAssets([])).to.be.false;
+    });
+  });
 
-  // describe('getWallet()', () => {
-  //   it('returns a predicate wallet', async () => {
-  //     let wallet = await connector.getWallet(ethAccount1);
+  describe('getWallet()', () => {
+    it('returns a predicate wallet', async () => {
+      let wallet = await connector.getWallet(predicateAccount1);
 
-  //     expect(wallet).to.deep.equal(
-  //       new FuelWalletLocked(predicateAccount1, fuelProvider)
-  //     );
-  //   });
+      const walletProvier = new FuelWalletProvider(
+        fuelProvider.url,
+        new FuelWalletConnection({
+          name: 'EVM-Wallet-Connector'
+        })
+      );
 
-  //   it('throws error for invalid address', async () => {
-  //     await expect(connector.getWallet('0x123')).to.be.rejectedWith(
-  //       'Invalid account'
-  //     );
-  //   });
-  // });
+      expect(wallet).to.deep.equal(
+        new FuelWalletLocked(predicateAccount1, walletProvier)
+      );
+    });
 
-  // describe('getProvider()', () => {
-  //   it('returns the fuel provider', async () => {
-  //     expect(await connector.getProvider()).to.be.equal(fuelProvider);
-  //   });
-  // });
+    it('throws error for invalid address', async () => {
+      await expect(connector.getWallet('0x123')).to.be.rejectedWith(
+        'Invalid account'
+      );
+    });
+  });
 
-  // describe('addAbi()', () => {
-  //   it('returns false', async () => {
-  //     expect(await connector.addAbi({})).to.be.false;
-  //   });
-  // });
+  describe('getProvider()', () => {
+    xit('returns the fuel provider', async () => {
+      const walletProvier = new FuelWalletProvider(
+        fuelProvider.url,
+        new FuelWalletConnection({
+          name: 'EVM-Wallet-Connector'
+        })
+      );
 
-  // describe('getAbi()', () => {
-  //   it('throws error', async () => {
-  //     await expect(connector.getAbi('contractId')).to.be.rejectedWith(
-  //       'Cannot get contractId ABI for a predicate'
-  //     );
-  //   });
-  // });
+      expect(await connector.getProvider()).to.be.equal(walletProvier);
+    });
+  });
 
-  // describe('hasAbi()', () => {
-  //   it('returns false', async () => {
-  //     expect(await connector.hasAbi('contractId')).to.be.false;
-  //   });
-  // });
+  describe('addAbi()', () => {
+    it('returns false', async () => {
+      expect(await connector.addAbi({})).to.be.false;
+    });
+  });
 
-  // describe('network()', () => {
-  //   it('returns the fuel network info', async () => {
-  //     let network = await connector.network();
+  describe('getAbi()', () => {
+    it('throws error', async () => {
+      await expect(connector.getAbi('contractId')).to.be.rejectedWith(
+        'Cannot get contractId ABI for a predicate'
+      );
+    });
+  });
 
-  //     expect(network.id).to.be.equal(
-  //       (await fuelProvider.getNetwork()).chainId.toString()
-  //     );
-  //     expect(network.url).to.be.equal(fuelProvider.url);
-  //   });
-  // });
+  describe('hasAbi()', () => {
+    it('returns false', async () => {
+      expect(await connector.hasAbi('contractId')).to.be.false;
+    });
+  });
 
-  // describe('networks()', () => {
-  //   it('returns an array of fuel network info', async () => {
-  //     let networks = await connector.networks();
-  //     let network = networks.pop();
+  describe('network()', () => {
+    it('returns the fuel network info', async () => {
+      let network = await connector.network();
 
-  //     expect(network!.id).to.be.equal(
-  //       (await connector.fuelProvider.getNetwork()).chainId.toString()
-  //     );
-  //     expect(network!.url).to.be.equal(fuelProvider.url);
-  //   });
-  // });
+      expect(network.id).to.be.equal(
+        (await fuelProvider.getNetwork()).chainId.toString()
+      );
+      expect(network.url).to.be.equal(fuelProvider.url);
+    });
+  });
 
-  // describe('addNetwork()', () => {
-  //   it('throws error', async () => {
-  //     await expect(
-  //       connector.addNetwork({ name: '', url: '' })
-  //     ).to.be.rejectedWith('Not implemented');
-  //   });
-  // });
+  describe('networks()', () => {
+    it('returns an array of fuel network info', async () => {
+      let networks = await connector.networks();
+      let network = networks.pop();
+
+      expect(network!.id).to.be.equal(
+        (await connector.fuelProvider.getNetwork()).chainId.toString()
+      );
+      expect(network!.url).to.be.equal(fuelProvider.url);
+    });
+  });
+
+  describe('addNetwork()', () => {
+    it('throws error', async () => {
+      await expect(
+        connector.addNetwork({ name: '', url: '' })
+      ).to.be.rejectedWith('Not implemented');
+    });
+  });
 });

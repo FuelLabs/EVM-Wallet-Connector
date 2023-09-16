@@ -30,9 +30,12 @@ import { hexlify } from '@ethersproject/bytes';
 export class EVMWalletConnector {
   ethProvider: JsonRpcProvider;
   fuelProvider: Provider;
+
+  // Currently connected Ethereum signer
   ethSigner: Signer | null;
-  // Todo: change to array of tuples. <(eth account, predicate account)>
-  predicateAccounts: Array<string>;
+
+  // Map(Ethereum Account => Predicate Account)
+  userAccounts: Map<string, string>;
 
   predicateBinary = hexlify(
     readFileSync('../simple-predicate/out/debug/simple-predicate.bin')
@@ -48,7 +51,7 @@ export class EVMWalletConnector {
     this.ethProvider = ethProvider;
     this.fuelProvider = fuelProvider;
     this.ethSigner = null;
-    this.predicateAccounts = [];
+    this.userAccounts = new Map();
   }
 
   async isConnected(): Promise<boolean> {
@@ -62,44 +65,45 @@ export class EVMWalletConnector {
 
   async disconnect(): Promise<boolean> {
     this.ethSigner = null;
-    this.predicateAccounts = [];
+    this.userAccounts = new Map();
     return true;
   }
 
   async accounts(): Promise<Array<string>> {
     // Get the ethereum accounts
-    let ethAccounts: Array<string> = await this.ethProvider.send(
+    const ethAccounts: Array<string> = await this.ethProvider.send(
       'eth_accounts',
       []
     );
 
-    // If the user has not added any accounts then 
+    // If the user has not added any accounts then
     // return the previously generated predicate accounts
-    if (ethAccounts.length === this.predicateAccounts.length) {
-      return this.predicateAccounts;
+    if (ethAccounts.length === this.userAccounts.size) {
+      return Array.from(this.userAccounts.values());
     }
 
-    // For each ethereum account set the configurable and generate the predicate address
+    // For each ethereum account set the configurable on the predicate and
+    // generate the predicate address
     for (let index = 0; index < ethAccounts.length; index++) {
-      let account = await getPredicateAccount(
-        ethAccounts[index]!,
-        this.fuelProvider,
-        this.predicateBinary,
-        this.predicateABI
-      );
+      // If there is a new Ethereum account then add it to our cache
+      if (!this.userAccounts.has(ethAccounts[index]!)) {
+        const account = await getPredicateAccount(
+          ethAccounts[index]!,
+          this.fuelProvider,
+          this.predicateBinary,
+          this.predicateABI
+        );
 
-      // If this is a new account then add it to our cache
-      if (!this.predicateAccounts.includes(account)) {
-        this.predicateAccounts.push(account);
-      }
+        this.userAccounts.set(ethAccounts[index]!, account);
 
-      // If accounts match then exit early
-      if (ethAccounts.length === this.predicateAccounts.length) {
-        break;
+        // If the number of accounts are equal then we should have them all cached
+        if (ethAccounts.length === this.userAccounts.size) {
+          break;
+        }
       }
     }
 
-    return this.predicateAccounts;
+    return Array.from(this.userAccounts.values());
   }
 
   async currentAccount(): Promise<string> {
@@ -107,13 +111,21 @@ export class EVMWalletConnector {
       throw Error('No connected accounts');
     }
 
-    let ethAccount = await this.ethSigner!.getAddress();
-    let account = await getPredicateAccount(
-      ethAccount,
-      this.fuelProvider,
-      this.predicateBinary,
-      this.predicateABI
-    );
+    const ethAccount = await this.ethSigner!.getAddress();
+    let account: string;
+
+    if (!this.userAccounts.has(ethAccount)) {
+      account = await getPredicateAccount(
+        ethAccount,
+        this.fuelProvider,
+        this.predicateBinary,
+        this.predicateABI
+      );
+
+      this.userAccounts.set(ethAccount, account);
+    } else {
+      account = this.userAccounts.get(ethAccount)!;
+    }
 
     return account;
   }
@@ -133,7 +145,7 @@ export class EVMWalletConnector {
     }
 
     // TODO: signer should be a predicate account
-    // check if valid account this.predicateAccounts
+    // check if valid account this.accounts
     // iterate over
     let ethAccount = await this.ethSigner!.getAddress();
 
@@ -171,30 +183,25 @@ export class EVMWalletConnector {
   }
 
   async getWallet(address: string): Promise<FuelWalletLocked> {
-    // TODO: predicate address
-    const provider = await this.getProvider();
+    const userAccounts = await this.accounts();
 
-    let ethAccounts: Array<string> = await this.ethProvider.send(
-      'eth_accounts',
-      []
-    );
-
-    if (!ethAccounts.includes(address.toLowerCase())) {
+    if (!userAccounts.includes(address)) {
       throw Error('Invalid account');
     }
 
-    let account = await getPredicateAccount(
-      address,
-      this.fuelProvider,
-      this.predicateBinary,
-      this.predicateABI
-    );
+    const provider = await this.getProvider();
 
-    return new FuelWalletLocked(account, provider);
+    return new FuelWalletLocked(address, provider);
   }
 
   async getProvider(): Promise<FuelWalletProvider> {
-    return this.fuelProvider;
+    const walletProvier = new FuelWalletProvider(
+      this.fuelProvider.url,
+      new FuelWalletConnection({
+        name: 'EVM-Wallet-Connector'
+      })
+    );
+    return walletProvier;
   }
 
   async addAbi(abiMap: AbiMap): Promise<boolean> {
@@ -211,7 +218,7 @@ export class EVMWalletConnector {
   }
 
   async network(): Promise<FuelProviderConfig> {
-    let network = await this.fuelProvider.getNetwork();
+    const network = await this.fuelProvider.getNetwork();
     return { id: network.chainId.toString(), url: this.fuelProvider.url };
   }
 
