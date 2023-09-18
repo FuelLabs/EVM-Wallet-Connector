@@ -174,6 +174,7 @@ export class EVMWalletConnector {
     const txID = hashTransaction(transactionRequest, chainId);
 
     const signature = await this.ethSigner!.signMessage(txID);
+    console.log(signature.length / 2);
 
     transactionRequest.witnesses.push(signature);
 
