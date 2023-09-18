@@ -174,7 +174,32 @@ export class EVMWalletConnector {
     const txID = hashTransaction(transactionRequest, chainId);
 
     const signature = await this.ethSigner!.signMessage(txID);
-    console.log(signature.length / 2);
+
+    // Remove prefix 0x
+    let sig = signature.slice(2, signature.length);
+
+    // Shift: [0, 1] or [27, 28]
+    const v = sig.slice(-2);
+
+    // r + s
+    sig = sig.slice(0, sig.length - 2);
+
+    const r = sig.slice(0, sig.length / 2);
+    const s = sig.slice(sig.length / 2, sig.length);
+
+    // Convert `s` to bytes then bitshift by `v`
+
+    // Concat r + s into a now compact representation of the sig
+
+    // Append the signature to the Tx
+
+    // Send the tx to the network
+
+    // console.log(signature);
+    // console.log(r);
+    // console.log(s);
+    // console.log(v);
+    // console.log(sig);
 
     transactionRequest.witnesses.push(signature);
 
