@@ -24,7 +24,9 @@ import {
 import { JsonRpcProvider, Signer } from 'ethers';
 
 import { readFileSync } from 'fs';
-import { hexlify } from '@ethersproject/bytes';
+import { hexlify, splitSignature } from '@ethersproject/bytes';
+
+import { fromRpcSig, toCompactSig, hexToBytes, bytesToBigInt, bytesToHex, concatBytes, setLengthLeft } from "@ethereumjs/util"
 
 // export class EVMWalletConnector extends FuelWalletConnection {
 export class EVMWalletConnector {
@@ -172,36 +174,20 @@ export class EVMWalletConnector {
 
     const transactionRequest = transactionRequestify(transaction);
     const txID = hashTransaction(transactionRequest, chainId);
+    
+    // const signature = await this.ethSigner!.signMessage(txID);
+    const signature = await this.ethSigner!.signMessage(hexToBytes("0x0000000000000000000000000000000000000000000000000000000000000000"));
+    console.log(signature);
+    const thing = splitSignature(hexToBytes(signature));
+    const compactSignature = thing.compact;
 
-    const signature = await this.ethSigner!.signMessage(txID);
+    console.log(compactSignature.length / 2);
+    console.log(compactSignature);
+    // console.log(hexToBytes(compactSignature));
+    // console.log(compactSignature1);
 
-    // Remove prefix 0x
-    let sig = signature.slice(2, signature.length);
-
-    // Shift: [0, 1] or [27, 28]
-    const v = sig.slice(-2);
-
-    // r + s
-    sig = sig.slice(0, sig.length - 2);
-
-    const r = sig.slice(0, sig.length / 2);
-    const s = sig.slice(sig.length / 2, sig.length);
-
-    // Convert `s` to bytes then bitshift by `v`
-
-    // Concat r + s into a now compact representation of the sig
-
-    // Append the signature to the Tx
-
-    // Send the tx to the network
-
-    // console.log(signature);
-    // console.log(r);
-    // console.log(s);
-    // console.log(v);
-    // console.log(sig);
-
-    transactionRequest.witnesses.push(signature);
+    transactionRequest.witnesses.push(compactSignature);
+    // transactionRequest.witnesses.push(hexToBytes(compactSignature));
 
     let response = await this.fuelProvider.sendTransaction(transactionRequest);
 
