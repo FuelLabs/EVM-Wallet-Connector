@@ -23,7 +23,8 @@ import {
   ScriptRequest,
   Interface,
   BigNumberish,
-  Script
+  Script,
+  TransactionResponse
 } from 'fuels';
 import { JsonRpcProvider, Signer } from 'ethers';
 
@@ -174,14 +175,38 @@ export class EVMWalletConnector {
         throw Error('Invalid account');
       }
     }
+    const transactionRequest = transactionRequestify(transaction);
+
+    const configurable = {
+      SIGNER: Address.fromB256(
+        ethAccount.replace('0x', '0x000000000000000000000000')
+      ).toEvmAddress()
+    };
+
+    const nextAvailableIndex = transactionRequest.witnesses.length;
+    const chainId2 = await this.fuelProvider.getChainId();
+    const predicate = new Predicate(
+      this.predicateBinary,
+      chainId2,
+      this.predicateABI,
+      this.fuelProvider,
+      configurable
+    );
+    predicate.setData(nextAvailableIndex);
+
+    console.log('predicate address on sdk', predicate.address.toString());
+    
     const chainInfo = await this.fuelProvider.getChain();
     const chainId: number = +chainInfo.consensusParameters.chainId;
 
-    const transactionRequest = transactionRequestify(transaction);
-    const txID = hashTransaction(transactionRequest, chainId);
-    
-    // const signature = await this.ethSigner!.signMessage(txID);
-    const signature = await this.ethSigner!.signMessage(hexToBytes("0x0000000000000000000000000000000000000000000000000000000000000000"));
+    // Estimate tx gas and transaction inputs
+    await predicate.provider.estimateTxDependencies(transactionRequest);
+
+    // Prepare to sign transaction
+    const requestWithEstimatedPredicateGas = await predicate.populateTransactionPredicateData(transactionRequest);
+    const txID = hashTransaction(requestWithEstimatedPredicateGas, chainId);
+    const signature = await this.ethSigner!.signMessage(hexToBytes(txID));
+    // const signature = await this.ethSigner!.signMessage(hexToBytes("0x0000000000000000000000000000000000000000000000000000000000000000"));
     // console.log(signature);
     const thing = splitSignature(hexToBytes(signature));
     const compactSignature = thing.compact;
@@ -189,8 +214,6 @@ export class EVMWalletConnector {
     // console.log(compactSignature.length / 2);
     // console.log(compactSignature);
     // console.log(hexToBytes(compactSignature));
-    // console.log(hexToBytes(compactSignature));
-    // console.log(compactSignature1);
 
     // Actual data
     // 0xe82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af3ac4dee7e846b432
@@ -222,15 +245,23 @@ export class EVMWalletConnector {
     // transactionRequest.witnesses.push(a);
     // console.log(transactionRequest.witnesses);
     transactionRequest.witnesses.push(compactSignature);
+    // transactionRequest.witnesses.push(compactSignature);
     // console.log(transactionRequest.witnesses);
     // transactionRequest.witnesses.push(hexToBytes(compactSignature));
 
     // 0xe82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af3ac4dee7e846b432
     //   e82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af3ac4dee7e846b432
 
-    let response = await this.fuelProvider.sendTransaction(transactionRequest);
+    // await this.fuelProvider.estimateTxDependencies(transactionRequest);
+    
+    
+    const transactionWithPredicateEstimated = await this.fuelProvider.estimatePredicates(requestWithEstimatedPredicateGas);
+    console.dir(transactionWithPredicateEstimated, { depth: null });
+    const response = await this.fuelProvider.operations.submit({ 
+      encodedTransaction: hexlify(transactionWithPredicateEstimated.toTransactionBytes())
+    });
 
-    return response.id;
+    return response.submit.id;
   }
 
   async assets(): Promise<Array<Asset>> {

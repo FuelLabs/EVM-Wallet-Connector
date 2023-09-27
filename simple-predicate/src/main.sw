@@ -39,12 +39,11 @@ configurable {
 }
 
 fn main(witness_index: u64) -> bool {
-    // Retrieve the Ethereum signature from the witness data in the Tx at the specified index.
     let signature: B512 = tx_witness_data(witness_index);
 
     // Hash the Fuel Tx (as the signed message) and attempt to recover the signer from the signature.
-    // let result = ec_recover_evm_address(signature, personal_sign_hash(tx_id()));
-    let result = ec_recover_evm_address(signature, personal_sign_hash(0x0000000000000000000000000000000000000000000000000000000000000000));
+    let result = ec_recover_evm_address(signature, personal_sign_hash(tx_id()));
+    // let result = ec_recover_evm_address(signature, personal_sign_hash(0x0000000000000000000000000000000000000000000000000000000000000000));
 
     // If the signers match then the predicate has validated the Tx.
     if result.is_ok() {
