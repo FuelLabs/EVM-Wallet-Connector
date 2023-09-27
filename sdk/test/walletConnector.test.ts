@@ -27,7 +27,9 @@ import {
   coinQuantityfy,
   hashTransaction,
   TransactionResponse,
-  CoinTransactionRequestOutput
+  CoinTransactionRequestOutput,
+  Script,
+  BigNumberish
 } from 'fuels';
 
 chai.use(chaiAsPromised);
@@ -64,6 +66,7 @@ describe('EVM Wallet Connector', () => {
       fuelProvider,
       configurables
     );
+    predicate.setData(1);
 
     return predicate;
   }
@@ -244,7 +247,9 @@ describe('EVM Wallet Connector', () => {
           amount: bn(1_000_000)
         }
       ]);
+      // request.setData(scriptABI, [1]);
       request.addResources(resouces);
+      // console.log(request.inputs);
       const requestWithEstimatedPredicateGas =
         await predicate.populateTransactionPredicateData(request);
 
@@ -255,16 +260,45 @@ describe('EVM Wallet Connector', () => {
       // Temporary hack here?
       await connector.accounts();
 
+      let scriptBin = hexlify(
+        readFileSync('../simple-script/out/debug/simple-script.bin')
+      );
+      let scriptABI = JSON.parse(
+        readFileSync(
+          '../simple-script/out/debug/simple-script-abi.json',
+          'utf-8'
+        )
+      );
+      const scriptInstance = new Script<BigNumberish[], BigNumberish>(scriptBin, scriptABI, fundingWallet);
+
+      scriptInstance.setConfigurableConstants({
+        SIGNER: Address.fromB256(
+          ethAccount1.replace('0x', '0x000000000000000000000000')
+        ).toEvmAddress()
+      });
+
+      const request2 = new ScriptTransactionRequest({
+        script: scriptInstance.bytes,
+        gasLimit: 10000,
+        gasPrice: 1
+      });
+      request2.setData(scriptABI, [1]);
+      request2.addResources(resouces);
+
       //  Send transaction using EvmWalletConnector
       const transactionId = await connector.sendTransaction(
-        requestWithEstimatedPredicateGas,
+        request2,
+        // requestWithEstimatedPredicateGas,
         {
           url: provider.url
         },
-        predicateAccount1
+        predicateAccount1,
+        scriptInstance
       );
       const response = new TransactionResponse(transactionId, provider);
-      const { receipts } = await response.waitForResult();
+      const { receipts, gqlTransaction } = await response.waitForResult();
+      console.log(receipts);
+      // console.log(gqlTransaction.receipts);
 
       // Check balances are correct
       const predicateAltBalanceFinal = await predicate.getBalance(ALT_ASSET_ID);

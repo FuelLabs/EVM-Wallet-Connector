@@ -19,7 +19,11 @@ import {
   Address,
   transactionRequestify,
   hashTransaction,
-  Provider
+  Provider,
+  ScriptRequest,
+  Interface,
+  BigNumberish,
+  Script
 } from 'fuels';
 import { JsonRpcProvider, Signer } from 'ethers';
 
@@ -140,7 +144,8 @@ export class EVMWalletConnector {
   async sendTransaction(
     transaction: TransactionRequestLike & { signer?: string },
     providerConfig: FuelProviderConfig,
-    signer?: string
+    signer?: string,
+    script: any
   ): Promise<string> {
     if (!(await this.isConnected())) {
       throw Error('No connected accounts');
@@ -177,17 +182,51 @@ export class EVMWalletConnector {
     
     // const signature = await this.ethSigner!.signMessage(txID);
     const signature = await this.ethSigner!.signMessage(hexToBytes("0x0000000000000000000000000000000000000000000000000000000000000000"));
-    console.log(signature);
+    // console.log(signature);
     const thing = splitSignature(hexToBytes(signature));
     const compactSignature = thing.compact;
 
-    console.log(compactSignature.length / 2);
-    console.log(compactSignature);
+    // console.log(compactSignature.length / 2);
+    // console.log(compactSignature);
+    // console.log(hexToBytes(compactSignature));
     // console.log(hexToBytes(compactSignature));
     // console.log(compactSignature1);
 
+    // Actual data
+    // 0xe82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af3ac4dee7e846b432
+
+    // Ts extracted
+    // 0x0000000000000040e82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af
+
+    // 0x0000000000000040e82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c155562
+    // 0x6205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af
+
+    // let a = [
+    //   232,  46, 213,  27,  43,  57, 100, 166, 119, 145, 113,
+    //   238, 101, 137, 177, 178, 245, 181, 235, 183, 124,  21,
+    //    85,  98,  98,   5, 212,  97, 156, 184, 223,  39, 154,
+    //    63,  92,  67, 246, 176, 234,  60, 118, 216,  82,  37,
+    //    45, 138,  25,  83, 154, 163, 202,  44, 185, 251, 102,
+    //   175,  58, 196, 222, 231, 232,  70, 180,  50
+    // ];
+    
+    // script.setConfigurableConstants({
+    //   SIGNER: Address.fromB256(
+    //     ethAccount.replace('0x', '0x000000000000000000000000')
+    //   ).toEvmAddress()
+    // });
+    // const { value, logs } = await script.functions.main(0).call();
+    // console.log(value.toString());
+    // console.log(logs);
+
+    // transactionRequest.witnesses.push(a);
+    // console.log(transactionRequest.witnesses);
     transactionRequest.witnesses.push(compactSignature);
+    // console.log(transactionRequest.witnesses);
     // transactionRequest.witnesses.push(hexToBytes(compactSignature));
+
+    // 0xe82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af3ac4dee7e846b432
+    //   e82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af3ac4dee7e846b432
 
     let response = await this.fuelProvider.sendTransaction(transactionRequest);
 
