@@ -20,30 +20,32 @@ import {
   transactionRequestify,
   hashTransaction,
   Provider,
-  ScriptRequest,
-  Interface,
-  BigNumberish,
-  Script,
-  TransactionResponse
+  InputValue
 } from 'fuels';
 import { JsonRpcProvider, Signer } from 'ethers';
 
 import { readFileSync } from 'fs';
 import { hexlify, splitSignature } from '@ethersproject/bytes';
 
-import { fromRpcSig, toCompactSig, hexToBytes, bytesToBigInt, bytesToHex, concatBytes, setLengthLeft } from "@ethereumjs/util"
+import { hexToBytes } from '@ethereumjs/util';
 
+// TODO: FuelWalletConnection requires a window.ethereum provider which should be abstracted away
 // export class EVMWalletConnector extends FuelWalletConnection {
 export class EVMWalletConnector {
+  // TODO: abstract away to use a generic provider over any library
   ethProvider: JsonRpcProvider;
+
+  // Our signer used to interact with the network
   fuelProvider: Provider;
 
+  // TODO: abstract away to generic singer - possibly remove entirely and replace with RPC function
   // Currently connected Ethereum signer
   ethSigner: Signer | null;
 
   // Map(Ethereum Account => Predicate Account)
   userAccounts: Map<string, string>;
 
+  // TODO: update to remove node functions
   predicateBinary = hexlify(
     readFileSync('../simple-predicate/out/debug/simple-predicate.bin')
   );
@@ -145,15 +147,14 @@ export class EVMWalletConnector {
   async sendTransaction(
     transaction: TransactionRequestLike & { signer?: string },
     providerConfig: FuelProviderConfig,
-    signer?: string,
-    script: any
+    signer?: string
   ): Promise<string> {
     if (!(await this.isConnected())) {
       throw Error('No connected accounts');
     }
-
     let ethAccount = await this.ethSigner!.getAddress();
 
+    // If a (Fuel / predicate) signer has been passed then update the ethers account
     if (signer !== undefined) {
       let validAccount = false;
 
@@ -163,8 +164,8 @@ export class EVMWalletConnector {
             this.ethSigner = await this.ethProvider.getSigner(
               ethAccountKey.toLowerCase()
             );
+            ethAccount = ethAccountKey;
           }
-          ethAccount = ethAccountKey;
           validAccount = true;
 
           break;
@@ -175,90 +176,44 @@ export class EVMWalletConnector {
         throw Error('Invalid account');
       }
     }
+
     const transactionRequest = transactionRequestify(transaction);
 
-    const configurable = {
-      SIGNER: Address.fromB256(
-        ethAccount.replace('0x', '0x000000000000000000000000')
-      ).toEvmAddress()
-    };
-
-    const nextAvailableIndex = transactionRequest.witnesses.length;
-    const chainId2 = await this.fuelProvider.getChainId();
-    const predicate = new Predicate(
-      this.predicateBinary,
-      chainId2,
-      this.predicateABI,
+    // Create a predicate and set the witness index to call in `main()`
+    const predicate = await createPredicate(
+      ethAccount,
       this.fuelProvider,
-      configurable
+      this.predicateBinary,
+      this.predicateABI
     );
-    predicate.setData(nextAvailableIndex);
+    predicate.setData(transactionRequest.witnesses.length);
 
-    console.log('predicate address on sdk', predicate.address.toString());
-    
+    // Attach missing inputs (including estimated predicate gas usage) / outputs to the request
+    await predicate.provider.estimateTxDependencies(transactionRequest);
+
+    // To each input of the request, attach the predicate and its data
+    const requestWithPredicateAttached =
+      predicate.populateTransactionPredicateData(transactionRequest);
+
     const chainInfo = await this.fuelProvider.getChain();
     const chainId: number = +chainInfo.consensusParameters.chainId;
 
-    // Estimate tx gas and transaction inputs
-    await predicate.provider.estimateTxDependencies(transactionRequest);
-
-    // Prepare to sign transaction
-    const requestWithEstimatedPredicateGas = await predicate.populateTransactionPredicateData(transactionRequest);
-    const txID = hashTransaction(requestWithEstimatedPredicateGas, chainId);
+    const txID = hashTransaction(requestWithPredicateAttached, chainId);
     const signature = await this.ethSigner!.signMessage(hexToBytes(txID));
-    // const signature = await this.ethSigner!.signMessage(hexToBytes("0x0000000000000000000000000000000000000000000000000000000000000000"));
-    // console.log(signature);
-    const thing = splitSignature(hexToBytes(signature));
-    const compactSignature = thing.compact;
 
-    // console.log(compactSignature.length / 2);
-    // console.log(compactSignature);
-    // console.log(hexToBytes(compactSignature));
+    // Transform the signature into compact form for Sway to understand
+    const compactSignature = splitSignature(hexToBytes(signature)).compact;
 
-    // Actual data
-    // 0xe82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af3ac4dee7e846b432
-
-    // Ts extracted
-    // 0x0000000000000040e82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af
-
-    // 0x0000000000000040e82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c155562
-    // 0x6205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af
-
-    // let a = [
-    //   232,  46, 213,  27,  43,  57, 100, 166, 119, 145, 113,
-    //   238, 101, 137, 177, 178, 245, 181, 235, 183, 124,  21,
-    //    85,  98,  98,   5, 212,  97, 156, 184, 223,  39, 154,
-    //    63,  92,  67, 246, 176, 234,  60, 118, 216,  82,  37,
-    //    45, 138,  25,  83, 154, 163, 202,  44, 185, 251, 102,
-    //   175,  58, 196, 222, 231, 232,  70, 180,  50
-    // ];
-    
-    // script.setConfigurableConstants({
-    //   SIGNER: Address.fromB256(
-    //     ethAccount.replace('0x', '0x000000000000000000000000')
-    //   ).toEvmAddress()
-    // });
-    // const { value, logs } = await script.functions.main(0).call();
-    // console.log(value.toString());
-    // console.log(logs);
-
-    // transactionRequest.witnesses.push(a);
-    // console.log(transactionRequest.witnesses);
+    // We have a witness, attach it to the transaction for inspection / recovery via the predicate
     transactionRequest.witnesses.push(compactSignature);
-    // transactionRequest.witnesses.push(compactSignature);
-    // console.log(transactionRequest.witnesses);
-    // transactionRequest.witnesses.push(hexToBytes(compactSignature));
 
-    // 0xe82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af3ac4dee7e846b432
-    //   e82ed51b2b3964a6779171ee6589b1b2f5b5ebb77c1555626205d4619cb8df279a3f5c43f6b0ea3c76d852252d8a19539aa3ca2cb9fb66af3ac4dee7e846b432
+    const transactionWithPredicateEstimated =
+      await this.fuelProvider.estimatePredicates(requestWithPredicateAttached);
 
-    // await this.fuelProvider.estimateTxDependencies(transactionRequest);
-    
-    
-    const transactionWithPredicateEstimated = await this.fuelProvider.estimatePredicates(requestWithEstimatedPredicateGas);
-    console.dir(transactionWithPredicateEstimated, { depth: null });
-    const response = await this.fuelProvider.operations.submit({ 
-      encodedTransaction: hexlify(transactionWithPredicateEstimated.toTransactionBytes())
+    const response = await this.fuelProvider.operations.submit({
+      encodedTransaction: hexlify(
+        transactionWithPredicateEstimated.toTransactionBytes()
+      )
     });
 
     return response.submit.id;
@@ -281,6 +236,7 @@ export class EVMWalletConnector {
   async getWallet(address: string): Promise<FuelWalletLocked> {
     const userAccounts = await this.accounts();
 
+    // If the address is not a valid predicate account for this wallet then error
     if (!userAccounts.includes(address)) {
       throw Error('Invalid account');
     }
@@ -340,11 +296,28 @@ async function getPredicateAccount(
   predicateBinary: string,
   predicateABI: JsonAbi
 ): Promise<string> {
+  const predicate = await createPredicate(
+    ethAddress,
+    fuelProvider,
+    predicateBinary,
+    predicateABI
+  );
+
+  return predicate.address.toAddress();
+}
+
+async function createPredicate(
+  ethAddress: string,
+  fuelProvider: Provider,
+  predicateBinary: string,
+  predicateABI: JsonAbi
+): Promise<Predicate<InputValue[]>> {
   const configurable = {
     SIGNER: Address.fromB256(
       ethAddress.replace('0x', '0x000000000000000000000000')
     ).toEvmAddress()
   };
+
   const chainId = await fuelProvider.getChainId();
   const predicate = new Predicate(
     predicateBinary,
@@ -354,5 +327,5 @@ async function getPredicateAccount(
     configurable
   );
 
-  return predicate.address.toAddress();
+  return predicate;
 }
