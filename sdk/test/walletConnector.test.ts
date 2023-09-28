@@ -13,7 +13,6 @@ import { readFileSync } from 'fs';
 import { hexlify } from '@ethersproject/bytes';
 import {
   bn,
-  OutputType,
   InputValue,
   Predicate,
   Address,
@@ -22,14 +21,7 @@ import {
   FUEL_NETWORK_URL,
   Provider,
   ScriptTransactionRequest,
-  WalletUnlocked,
-  CoinQuantityLike,
-  coinQuantityfy,
-  hashTransaction,
-  TransactionResponse,
-  CoinTransactionRequestOutput,
-  Script,
-  BigNumberish
+  WalletUnlocked
 } from 'fuels';
 
 chai.use(chaiAsPromised);
