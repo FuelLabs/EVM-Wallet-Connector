@@ -1,33 +1,38 @@
 {
+	"main": "dist/src/index.js",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "node generatePredicateResources.js && tsc",
+		"fmt": "prettier --config .prettierrc 'src/*.ts' 'test/*.ts' --write",
+		"test": "node generatePredicateResources.js && mocha --require ts-node/register  test/*.test.ts"
+	},
 	"dependencies": {
-		"@ethersproject/bytes": "^5.7.0",
 		"@ethereumjs/util": "^9.0.0",
+		"@ethersproject/bytes": "^5.7.0",
 		"@fuel-wallet/sdk": "^0.12.3",
 		"@fuel-wallet/types": "^0.12.3",
-		"@types/chrome": "^0.0.245",
-		"@types/react": "^18.2.21",
-		"ethers": "^6.7.1",
-		"fuels": "^0.56.0"
+		"fuels": "^0.56.0",
+		"memoizee": "^0.4.15"
 	},
 	"devDependencies": {
-		"@fuel-ts/wallet": "^0.56.0",
+		"@fuel-ts/fuel-core": "^0.60.0",
+		"@fuel-ts/wallet": "^0.60.0",
 		"@fuels/ts-config": "^0.0.7",
-		"@nomicfoundation/hardhat-ethers": "^3.0.4",
-		"@nomicfoundation/hardhat-toolbox": "^3.0.0",
-		"@npmcli/config": "^7.2.0",
 		"@types/chai": "^4.3.6",
 		"@types/chai-as-promised": "^7.1.6",
+		"@types/memoizee": "^0.4.9",
 		"@types/mocha": "^10.0.1",
 		"@types/node": "^20.6.0",
 		"chai": "^4.3.8",
 		"chai-as-promised": "^7.1.1",
-		"hardhat": "^2.17.3",
+		"mocha": "^10.2.0",
 		"prettier": "^3.0.3",
+		"ts-loader": "^9.4.4",
 		"ts-node": "^10.9.1",
-		"typescript": "^5.2.2"
-	},
-	"scripts": {
-		"fmt": "prettier --config .prettierrc 'src/*.ts' 'test/*.ts' --write",
-		"test": "npx hardhat test"
+		"typescript": "^5.2.2",
+		"webpack": "^5.88.2",
+		"webpack-cli": "^5.1.4"
 	}
 }

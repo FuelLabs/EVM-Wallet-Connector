@@ -1,9 +1,7 @@
 import type {
   AbiMap,
   Asset,
-  FuelEventArg,
   FuelProviderConfig,
-  FuelEvents,
   Network,
   FuelWalletConnector
 } from '@fuel-wallet/types';
@@ -22,121 +20,76 @@ import {
   Provider,
   InputValue,
 } from 'fuels';
-import { JsonRpcProvider, Signer } from 'ethers';
 
-import { readFileSync } from 'fs';
-import { hexlify, splitSignature } from '@ethersproject/bytes';
+import { BytesLike, hexlify, splitSignature } from '@ethersproject/bytes';
+import memoize from 'memoizee';
 
 import { hexToBytes } from '@ethereumjs/util';
+import { EIP1193Provider } from './eip-1193';
+import { predicateAbi, predicateBytecode } from './predicateResources';
 
-// TODO: FuelWalletConnection requires a window.ethereum provider which should be abstracted away
 // export class EVMWalletConnector extends FuelWalletConnection {
 export class EVMWalletConnector {
-  // TODO: abstract away to use a generic provider over any library
-  ethProvider: JsonRpcProvider;
+  ethProvider: EIP1193Provider;
 
   // Our signer used to interact with the network
   fuelProvider: Provider;
 
-  // TODO: abstract away to generic singer - possibly remove entirely and replace with RPC function
-  // Currently connected Ethereum signer
-  ethSigner: Signer | null;
-
-  // Map(Ethereum Account => Predicate Account)
-  userAccounts: Map<string, string>;
-
-  // TODO: update to remove node functions
-  predicateBinary = hexlify(
-    readFileSync('../simple-predicate/out/debug/simple-predicate.bin')
-  );
-  predicateABI = JSON.parse(
-    readFileSync(
-      '../simple-predicate/out/debug/simple-predicate-abi.json',
-      'utf-8'
-    )
-  );
-
-  constructor(ethProvider: JsonRpcProvider, fuelProvider: Provider) {
+  constructor(ethProvider: EIP1193Provider, fuelProvider: Provider) {
     this.ethProvider = ethProvider;
     this.fuelProvider = fuelProvider;
-    this.ethSigner = null;
-    this.userAccounts = new Map();
   }
 
   async isConnected(): Promise<boolean> {
-    return this.ethSigner !== null;
+    const accounts = await this.accounts();
+    return accounts.length > 0;
   }
 
   async connect(): Promise<boolean> {
-    this.ethSigner = await this.ethProvider.getSigner();
+    await this.ethProvider.request({ method: 'eth_requestAccounts' });
     return true;
   }
 
   async disconnect(): Promise<boolean> {
-    this.ethSigner = null;
-    this.userAccounts = new Map();
+    // TODO: actually disconnect?
     return true;
   }
 
-  async accounts(): Promise<Array<string>> {
+  async accounts(): Promise<string[]> {
     // Get the ethereum accounts
-    const ethAccounts: Array<string> = await this.ethProvider.send(
-      'eth_accounts',
-      []
+    const ethAccounts: Array<string> = await this.ethProvider.request({
+      method: 'eth_accounts'
+    });
+
+    const chainId = await this.fuelProvider.getChainId();
+    const accounts = ethAccounts.map((account) =>
+      getPredicateAccount(account, chainId, predicateBytecode, predicateAbi)
     );
 
-    // If the user has not added any accounts then
-    // return the previously generated predicate accounts
-    if (ethAccounts.length === this.userAccounts.size) {
-      return Array.from(this.userAccounts.values());
-    }
-
-    // For each ethereum account set the configurable on the predicate and
-    // generate the predicate address
-    for (let index = 0; index < ethAccounts.length; index++) {
-      // If there is a new Ethereum account then add it to our cache
-      if (!this.userAccounts.has(ethAccounts[index]!)) {
-        const account = await getPredicateAccount(
-          ethAccounts[index]!,
-          this.fuelProvider,
-          this.predicateBinary,
-          this.predicateABI
-        );
-
-        this.userAccounts.set(ethAccounts[index]!, account);
-
-        // If the number of accounts are equal then we should have them all cached
-        if (ethAccounts.length === this.userAccounts.size) {
-          break;
-        }
-      }
-    }
-
-    return Array.from(this.userAccounts.values());
+    return accounts;
   }
 
-  async currentAccount(): Promise<string> {
+  async currentAccount(): Promise<string | null> {
     if (!(await this.isConnected())) {
       throw Error('No connected accounts');
     }
 
-    const ethAccount = await this.ethSigner!.getAddress();
-    let account: string;
+    const ethAccounts: string[] = await this.ethProvider.request({
+      method: 'eth_accounts'
+    });
 
-    if (!this.userAccounts.has(ethAccount)) {
-      account = await getPredicateAccount(
-        ethAccount,
-        this.fuelProvider,
-        this.predicateBinary,
-        this.predicateABI
-      );
-
-      this.userAccounts.set(ethAccount, account);
-    } else {
-      account = this.userAccounts.get(ethAccount)!;
+    if (ethAccounts.length === 0) {
+      return null;
     }
 
-    return account;
+    const fuelAccount = await getPredicateAccount(
+      ethAccounts[0]!,
+      await this.fuelProvider.getChainId(),
+      predicateBytecode,
+      predicateAbi
+    );
+
+    return fuelAccount;
   }
 
   async signMessage(address: string, message: string): Promise<string> {
@@ -146,46 +99,43 @@ export class EVMWalletConnector {
 
   async sendTransaction(
     transaction: TransactionRequestLike & { signer?: string },
-    providerConfig: FuelProviderConfig,
+    _providerConfig: FuelProviderConfig,
     signer?: string
   ): Promise<string> {
     if (!(await this.isConnected())) {
       throw Error('No connected accounts');
     }
-    let ethAccount = await this.ethSigner!.getAddress();
+    const ethAccounts: Array<string> = await this.ethProvider.request({
+      method: 'eth_accounts'
+    });
+    const chainId = await this.fuelProvider.getChainId();
+    const accounts = ethAccounts.map((account) => ({
+      ethAccount: account,
+      predicateAccount: getPredicateAccount(
+        account,
+        chainId,
+        predicateBytecode,
+        predicateAbi
+      )
+    }));
+    const account = signer
+      ? accounts.find(({ predicateAccount }) => predicateAccount === signer)
+      : accounts[0];
 
-    // If a (Fuel / predicate) signer has been passed then update the ethers account
-    if (signer !== undefined) {
-      let validAccount = false;
-
-      for (const [ethAccountKey, predicateAccount] of this.userAccounts) {
-        if (signer === predicateAccount) {
-          if (ethAccount !== ethAccountKey) {
-            this.ethSigner = await this.ethProvider.getSigner(
-              ethAccountKey.toLowerCase()
-            );
-            ethAccount = ethAccountKey;
-          }
-          validAccount = true;
-
-          break;
-        }
-      }
-
-      if (!validAccount) {
-        throw Error('Invalid account');
-      }
+    if (!account) {
+      throw Error('Invalid account');
     }
 
     const transactionRequest = transactionRequestify(transaction);
 
     // Create a predicate and set the witness index to call in `main()`
-    const predicate = await createPredicate(
-      ethAccount,
-      this.fuelProvider,
-      this.predicateBinary,
-      this.predicateABI
+    const predicate = createPredicate(
+      account.ethAccount,
+      await this.fuelProvider.getChainId(),
+      predicateBytecode,
+      predicateAbi
     );
+    predicate.connect(this.fuelProvider);
     predicate.setData(transactionRequest.witnesses.length);
 
     // Attach missing inputs (including estimated predicate gas usage) / outputs to the request
@@ -195,11 +145,11 @@ export class EVMWalletConnector {
     const requestWithPredicateAttached =
       predicate.populateTransactionPredicateData(transactionRequest);
 
-    const chainInfo = await this.fuelProvider.getChain();
-    const chainId: number = +chainInfo.consensusParameters.chainId;
-
     const txID = hashTransaction(requestWithPredicateAttached, chainId);
-    const signature = await this.ethSigner!.signMessage(hexToBytes(txID));
+    const signature = await this.ethProvider.request({
+      method: 'personal_sign',
+      params: [txID, account.ethAccount]
+    });
 
     // Transform the signature into compact form for Sway to understand
     const compactSignature = splitSignature(hexToBytes(signature)).compact;
@@ -292,42 +242,41 @@ export class EVMWalletConnector {
   // }
 }
 
-async function getPredicateAccount(
+function getPredicateAccount(
   ethAddress: string,
-  fuelProvider: Provider,
-  predicateBinary: string,
-  predicateABI: JsonAbi
-): Promise<string> {
-  const predicate = await createPredicate(
+  chainId: number,
+  predicateBytecode: BytesLike,
+  predicateAbi: JsonAbi
+): string {
+  const predicate = createPredicate(
     ethAddress,
-    fuelProvider,
-    predicateBinary,
-    predicateABI
+    chainId,
+    predicateBytecode,
+    predicateAbi
   );
 
   return predicate.address.toAddress();
 }
 
-async function createPredicate(
+const createPredicate = memoize(function createPredicate(
   ethAddress: string,
-  fuelProvider: Provider,
-  predicateBinary: string,
-  predicateABI: JsonAbi
-): Promise<Predicate<InputValue[]>> {
+  chainId: number,
+  predicateBytecode: BytesLike,
+  predicateAbi: JsonAbi
+): Predicate<InputValue[]> {
   const configurable = {
     SIGNER: Address.fromB256(
       ethAddress.replace('0x', '0x000000000000000000000000')
     ).toEvmAddress()
   };
 
-  const chainId = await fuelProvider.getChainId();
   const predicate = new Predicate(
-    predicateBinary,
+    predicateBytecode,
     chainId,
-    predicateABI,
-    fuelProvider,
+    predicateAbi,
+    undefined,
     configurable
   );
 
   return predicate;
-}
+});

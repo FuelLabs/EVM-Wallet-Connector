@@ -1,14 +1,12 @@
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
-import { ethers } from 'hardhat';
 import { EVMWalletConnector } from '../src/index';
 import {
   FuelWalletConnection,
   FuelWalletLocked,
   FuelWalletProvider
 } from '@fuel-wallet/sdk';
-import { JsonRpcProvider } from 'ethers';
 import { readFileSync } from 'fs';
 import { hexlify } from '@ethersproject/bytes';
 import {
@@ -21,14 +19,17 @@ import {
   FUEL_NETWORK_URL,
   Provider,
   ScriptTransactionRequest,
-  WalletUnlocked
+  WalletUnlocked,
+  Signer
 } from 'fuels';
+import { launchNodeAndGetWallets } from '@fuel-ts/wallet/test-utils';
+import { MockProvider } from './mockProvider';
 
 chai.use(chaiAsPromised);
 
 describe('EVM Wallet Connector', () => {
   // Providers used to interact with wallets
-  let ethProvider: JsonRpcProvider;
+  let ethProvider: MockProvider;
   let fuelProvider: Provider;
 
   // Our connector bridging MetaMask and predicate accounts
@@ -41,6 +42,8 @@ describe('EVM Wallet Connector', () => {
   // Predicate accounts associated with the ethereum accounts
   let predicateAccount1: string;
   let predicateAccount2: string;
+
+  let stopProvider: any;
 
   async function createPredicate(
     configurables: { [name: string]: unknown } | undefined
@@ -64,46 +67,57 @@ describe('EVM Wallet Connector', () => {
   }
 
   before(async () => {
-    // Fetch the signing accounts from hardhat
-    let signers = await ethers.getSigners();
-    ethAccount1 = signers[0]!.address;
-    ethAccount2 = signers[1]!.address;
-
-    // Setting the providers once should not cause issues
-    // Create the Ethereum provider
-    ethProvider = new ethers.JsonRpcProvider('http://localhost:8545'); // TODO: switch hardhat node to local node for this?
-
-    // Create the Fuel provider
+    // process.env.GENESIS_SECRET = '0x6e48a022f9d4ae187bca4e2645abd62198ae294ee484766edbdaadf78160dc68';
+    // const { stop, provider } = await launchNodeAndGetWallets({
+    //   launchNodeOptions: {
+    //     chainConfigPath: `${__dirname}/chainConfig.json`,
+    //   },
+    // });
+    // let stopProvider = stop;
+    // fuelProvider = provider as any;
     fuelProvider = new Provider(FUEL_NETWORK_URL);
-
-    // Create the predicate and calculate the address for each Ethereum account
-    let paddedAcc1 = ethAccount1.replace('0x', '0x000000000000000000000000');
-    let paddedAcc2 = ethAccount2.replace('0x', '0x000000000000000000000000');
-
-    let configurable1 = { SIGNER: Address.fromB256(paddedAcc1).toEvmAddress() };
-    let configurable2 = { SIGNER: Address.fromB256(paddedAcc2).toEvmAddress() };
-
-    let predicate1 = await createPredicate(configurable1);
-    let predicate2 = await createPredicate(configurable2);
-
-    predicateAccount1 = predicate1.address.toAddress();
-    predicateAccount2 = predicate2.address.toAddress();
   });
 
-  beforeEach(() => {
+  after(() => {
+    stopProvider && stopProvider();
+  });
+
+  beforeEach(async () => {
+    // Setting the providers once should not cause issues
+    // Create the Ethereum provider
+    ethProvider = new MockProvider();
+
+    const accounts = ethProvider.getAccounts();
+    const predicateAccounts = await Promise.all(
+      accounts.map(async (account) => {
+        const paddedAcc = account.replace('0x', '0x000000000000000000000000');
+        const configurable = {
+          SIGNER: Address.fromB256(paddedAcc).toEvmAddress()
+        };
+        const predicate = await createPredicate(configurable);
+        return predicate.address.toAddress();
+      })
+    );
+
+    ethAccount1 = accounts[0]!;
+    ethAccount2 = accounts[1]!;
+
+    predicateAccount1 = predicateAccounts[0]!;
+    predicateAccount2 = predicateAccounts[1]!;
+
     // Class contains state, reset the state for each test
     connector = new EVMWalletConnector(ethProvider, fuelProvider);
   });
 
+  afterEach(() => {
+    ethProvider.removeAllListeners();
+  });
+
   describe('connect()', () => {
     it('connects to ethers signer', async () => {
-      let isNull = connector.ethSigner;
       let connected = await connector.connect();
-      let isNotNull = connector.ethSigner;
 
-      expect(isNull).to.be.null;
       expect(connected).to.be.true;
-      expect(isNotNull).to.not.be.null;
     });
   });
 
@@ -126,13 +140,9 @@ describe('EVM Wallet Connector', () => {
     it('disconnects from ethers signer', async () => {
       await connector.connect();
 
-      let isNotNull = connector.ethSigner;
       let connected = await connector.disconnect();
-      let isNull = connector.ethSigner;
 
-      expect(isNotNull).to.not.be.null;
       expect(connected).to.be.true;
-      expect(isNull).to.be.null;
     });
   });
 
@@ -553,6 +563,7 @@ describe('EVM Wallet Connector', () => {
 
   describe('getWallet()', () => {
     it('returns a predicate wallet', async () => {
+      await connector.connect();
       let wallet = await connector.getWallet(predicateAccount1);
 
       let expectedWallet = new FuelWalletLocked(
