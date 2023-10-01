@@ -1,4 +1,6 @@
 {
+	"name": "@dmihal/fuel-evm-wallet-connector",
+	"version": "0.0.1",
 	"main": "dist/src/index.js",
 	"files": [
 		"dist"
