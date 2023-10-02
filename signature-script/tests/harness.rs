@@ -37,7 +37,7 @@ async fn valid_signature_returns_true_for_validating() {
 
     // Create the predicate by setting the signer and pass in the witness argument
     let witness_index = 1;
-    let configurables = MyScriptConfigurables::new().set_SIGNER(evm_address);
+    let configurables = MyScriptConfigurables::new().with_SIGNER(evm_address);
 
     let script_call_handler = MyScript::new(fuel_wallet.clone(), SCRIPT_BINARY_PATH)
         .with_configurables(configurables)
@@ -55,15 +55,23 @@ async fn valid_signature_returns_true_for_validating() {
     let signed_tx = compact(&signature);
 
     // Then we add in the signed data for the witness
-    tx.witnesses_mut().push(Witness::from(signed_tx.to_vec()));
+    tx.append_witness(Witness::from(signed_tx.to_vec()));
 
     // Execute the Tx
+    let tx_id = fuel_wallet
+        .provider()
+        .unwrap()
+        .send_transaction(tx)
+        .await
+        .unwrap();
+
     let receipts = fuel_wallet
         .provider()
         .unwrap()
-        .send_transaction(&tx)
+        .tx_status(&tx_id)
         .await
-        .unwrap();
+        .unwrap()
+        .take_receipts();
 
     let response = script_call_handler.get_response(receipts).unwrap();
 
@@ -84,7 +92,7 @@ async fn invalid_signature_returns_false_for_failed_validation() {
 
     // Create the predicate by setting the signer and pass in the witness argument
     let witness_index = 1;
-    let configurables = MyScriptConfigurables::new().set_SIGNER(evm_address);
+    let configurables = MyScriptConfigurables::new().with_SIGNER(evm_address);
 
     let script_call_handler = MyScript::new(fuel_wallet.clone(), SCRIPT_BINARY_PATH)
         .with_configurables(configurables)
@@ -109,15 +117,23 @@ async fn invalid_signature_returns_false_for_failed_validation() {
     }
 
     // Then we add in the signed data for the witness
-    tx.witnesses_mut().push(Witness::from(signed_tx.to_vec()));
+    tx.append_witness(Witness::from(signed_tx.to_vec()));
 
     // Execute the Tx
+    let tx_id = fuel_wallet
+        .provider()
+        .unwrap()
+        .send_transaction(tx)
+        .await
+        .unwrap();
+
     let receipts = fuel_wallet
         .provider()
         .unwrap()
-        .send_transaction(&tx)
+        .tx_status(&tx_id)
         .await
-        .unwrap();
+        .unwrap()
+        .take_receipts();
 
     let response = script_call_handler.get_response(receipts).unwrap();
 

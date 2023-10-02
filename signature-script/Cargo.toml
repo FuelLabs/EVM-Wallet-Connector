@@ -3,14 +3,15 @@ name = "mm-predicate"
 description = "A cargo-generate template for Rust + Sway integration testing."
 version = "0.1.0"
 edition = "2021"
-authors = ["Braqzen <103777923+Braqzen@users.noreply.github.com>"]
+authors = ["Fuel Labs <contact@fuel.sh>"]
 license = "Apache-2.0"
 
 [dev-dependencies]
 ethers = "2.0"
 ethers-core = "2.0"
 ethers-signers = "2.0"
-fuels = { version = "0.46", features = ["fuel-core-lib"] }
+# fuels = { version = "0.46", features = ["fuel-core-lib"] }
+fuels = { git = "https://github.com/FuelLabs/fuels-rs.git", branch = "master" }
 sha3 = "0.10.8"
 tokio = { version = "1.12", features = ["rt", "macros"] }
 fuel-tx = "0.35.3"
