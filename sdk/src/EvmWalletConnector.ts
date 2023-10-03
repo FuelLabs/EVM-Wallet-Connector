@@ -21,7 +21,6 @@ import {
   hashTransaction,
   Provider,
   InputValue,
-  TransactionResponse
 } from 'fuels';
 import { JsonRpcProvider, Signer } from 'ethers';
 
