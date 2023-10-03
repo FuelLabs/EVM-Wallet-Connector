@@ -20,7 +20,8 @@ import {
   transactionRequestify,
   hashTransaction,
   Provider,
-  InputValue
+  InputValue,
+  TransactionResponse
 } from 'fuels';
 import { JsonRpcProvider, Signer } from 'ethers';
 
@@ -205,6 +206,8 @@ export class EVMWalletConnector {
     const compactSignature = splitSignature(hexToBytes(signature)).compact;
 
     // We have a witness, attach it to the transaction for inspection / recovery via the predicate
+    // TODO: not that there is a strange witness before we add out compact signature
+    //       it is [ 0x ] and we may need to update versions later if / when this is fixed
     transactionRequest.witnesses.push(compactSignature);
 
     const transactionWithPredicateEstimated =

@@ -360,7 +360,7 @@ describe('EVM Wallet Connector', () => {
     });
 
     it('transfer when a different valid signer is passed in', async () => {
-      let paddedAcc = ethAccount1.replace('0x', '0x000000000000000000000000');
+      let paddedAcc = ethAccount2.replace('0x', '0x000000000000000000000000');
       let configurable = { SIGNER: Address.fromB256(paddedAcc).toEvmAddress() };
       let predicate = await createPredicate(configurable);
 
