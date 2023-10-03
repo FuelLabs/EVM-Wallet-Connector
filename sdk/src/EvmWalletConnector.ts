@@ -26,7 +26,7 @@ import memoize from 'memoizee';
 
 import { hexToBytes } from '@ethereumjs/util';
 import { EIP1193Provider } from './eip-1193';
-import { predicateAbi, predicateBytecode } from './predicateResources';
+import { predicates } from './predicateResources';
 
 // export class EVMWalletConnector extends FuelWalletConnection {
 export class EVMWalletConnector {
@@ -35,9 +35,18 @@ export class EVMWalletConnector {
   // Our signer used to interact with the network
   fuelProvider: Provider;
 
-  constructor(ethProvider: EIP1193Provider, fuelProvider: Provider) {
+  private predicate: { abi: any; bytecode: Uint8Array };
+
+  constructor(
+    ethProvider: EIP1193Provider,
+    fuelProvider: Provider,
+    { predicate = 'simple-predicate' }: { predicate?: string } = {}
+  ) {
     this.ethProvider = ethProvider;
     this.fuelProvider = fuelProvider;
+
+    if (!predicates[predicate]) throw new Error('Invalid predicate');
+    this.predicate = predicates[predicate];
   }
 
   async isConnected(): Promise<boolean> {
@@ -63,7 +72,12 @@ export class EVMWalletConnector {
 
     const chainId = await this.fuelProvider.getChainId();
     const accounts = ethAccounts.map((account) =>
-      getPredicateAccount(account, chainId, predicateBytecode, predicateAbi)
+      getPredicateAccount(
+        account,
+        chainId,
+        this.predicate.bytecode,
+        this.predicate.abi
+      )
     );
 
     return accounts;
@@ -85,8 +99,8 @@ export class EVMWalletConnector {
     const fuelAccount = await getPredicateAccount(
       ethAccounts[0]!,
       await this.fuelProvider.getChainId(),
-      predicateBytecode,
-      predicateAbi
+      this.predicate.bytecode,
+      this.predicate.abi
     );
 
     return fuelAccount;
@@ -114,8 +128,8 @@ export class EVMWalletConnector {
       predicateAccount: getPredicateAccount(
         account,
         chainId,
-        predicateBytecode,
-        predicateAbi
+        this.predicate.bytecode,
+        this.predicate.abi
       )
     }));
     const account = signer
@@ -132,8 +146,8 @@ export class EVMWalletConnector {
     const predicate = createPredicate(
       account.ethAccount,
       await this.fuelProvider.getChainId(),
-      predicateBytecode,
-      predicateAbi
+      this.predicate.bytecode,
+      this.predicate.abi
     );
     predicate.connect(this.fuelProvider);
     predicate.setData(transactionRequest.witnesses.length);
