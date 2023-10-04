@@ -1,4 +1,4 @@
-use fuel_tx::Witness;
+use fuel_tx::{Output, Witness};
 use fuels::{
     accounts::predicate::Predicate,
     prelude::{Signer, *},
@@ -30,23 +30,11 @@ fn convert_eth_address(eth_wallet_address: &[u8]) -> [u8; 32] {
 }
 
 #[tokio::test]
-async fn testing() {
+async fn valid_signature_returns_true_for_validating() {
     // Create fuel wallet
     let mut wallets =
         launch_custom_provider_and_get_wallets(WalletsConfig::default(), None, None).await;
     let fuel_wallet = wallets.pop().unwrap();
-
-    let wallet_coins = fuel_wallet
-        .get_asset_inputs_for_amount(
-            AssetId::default(),
-            fuel_wallet
-                .get_asset_balance(&AssetId::default())
-                .await
-                .unwrap(),
-            None,
-        )
-        .await
-        .unwrap();
 
     // Create eth wallet and convert to EVMAddress
     let eth_wallet = LocalWallet::new(&mut thread_rng());
@@ -55,7 +43,7 @@ async fn testing() {
 
     // Create the predicate by setting the signer and pass in the witness argument
     let witness_index = 1;
-    let configurables = MyPredicateConfigurables::new().set_SIGNER(evm_address);
+    let configurables = MyPredicateConfigurables::new().with_SIGNER(evm_address);
 
     // Create a predicate
     let predicate = Predicate::load_from(PREDICATE_BINARY_PATH)
@@ -95,19 +83,31 @@ async fn testing() {
         _ => panic!("Predicate coin resource type does not match"),
     };
 
-    let mut inputs = vec![input_predicate];
-    inputs.extend(wallet_coins);
+    let inputs = vec![input_predicate];
+    let outputs = vec![Output::change(
+        predicate.address().into(),
+        0,
+        AssetId::default(),
+    )];
 
     let consensus_parameters = fuel_wallet.provider().unwrap().consensus_parameters();
 
     // Create the Tx
-    let mut tx = ScriptTransactionBuilder::default()
-        .set_inputs(inputs)
-        .set_tx_params(TxParameters::default())
-        .set_consensus_parameters(consensus_parameters)
-        .build()
-        .unwrap();
-    fuel_wallet.sign_transaction(&mut tx).unwrap();
+    let mut tb = ScriptTransactionBuilder::prepare_transfer(
+        inputs,
+        outputs,
+        TxParameters::default(),
+        fuel_wallet
+            .provider()
+            .unwrap()
+            .network_info()
+            .await
+            .unwrap(),
+    );
+
+    fuel_wallet.sign_transaction(&mut tb);
+
+    let mut tx = tb.build().unwrap();
 
     // Now that we have the Tx the ethereum wallet must sign the ID
     let tx_id = tx.id(consensus_parameters.chain_id.into());
@@ -115,19 +115,30 @@ async fn testing() {
     let signature = eth_wallet.sign_message(*tx_id).await.unwrap();
 
     // Convert into compact format for Sway
-    let signed_tx = compact(&signature);
+    let signed_tx: [u8; 64] = compact(&signature);
 
     // Then we add in the signed data for the witness
-    tx.witnesses_mut().push(Witness::from(signed_tx.to_vec()));
+    tx.append_witness(Witness::from(signed_tx.to_vec()));
 
     // Execute the Tx
-    let response = fuel_wallet
+    let tx_id = fuel_wallet
         .provider()
         .unwrap()
-        .send_transaction(&tx)
+        .send_transaction(tx)
         .await
         .unwrap();
-    dbg!(response);
+
+    let receipts = fuel_wallet
+        .provider()
+        .unwrap()
+        .tx_status(&tx_id)
+        .await
+        .unwrap()
+        .take_receipts();
+
+    dbg!(receipts);
+
+    // assert!(response.value);
 }
 
 // This can probably be cleaned up
