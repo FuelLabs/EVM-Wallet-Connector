@@ -67,7 +67,12 @@ async fn valid_signature_transfers_funds() {
 
     // Add the signed data as a witness onto the Tx
     script_transaction
-        .append_witness(Witness::from(compact_signature.to_vec()), &network_info)
+        .append_witness(
+            Witness::from(compact_signature.to_vec()),
+            &network_info.chain_id(),
+            &network_info.consensus_parameters,
+            &network_info.gas_costs,
+        )
         .unwrap();
 
     // Check predicate balance before sending the Tx
@@ -150,7 +155,12 @@ async fn invalid_signature_reverts_predicate() {
 
     // Add the signed data as a witness onto the Tx
     script_transaction
-        .append_witness(Witness::from(compact_signature.to_vec()), &network_info)
+        .append_witness(
+            Witness::from(compact_signature.to_vec()),
+            &network_info.chain_id(),
+            &network_info.consensus_parameters,
+            &network_info.gas_costs,
+        )
         .unwrap();
 
     // Execute the Tx, causing a revert because the predicate fails to recovery correct address
