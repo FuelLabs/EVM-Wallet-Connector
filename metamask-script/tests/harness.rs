@@ -1,6 +1,6 @@
 use fuel_tx::Witness;
 use fuels::{
-    prelude::{abigen, launch_custom_provider_and_get_wallets, WalletsConfig},
+    prelude::{abigen, launch_provider_and_get_wallet},
     types::{transaction::Transaction, Bits256, EvmAddress},
 };
 
@@ -10,11 +10,11 @@ use ethers_core::{
 };
 use ethers_signers::{LocalWallet, Signer as EthSigner};
 
-const SCRIPT_BINARY_PATH: &str = "./out/debug/signature-script.bin";
+const SCRIPT_BINARY_PATH: &str = "./out/debug/metamask-script.bin";
 
 abigen!(Script(
     name = "MyScript",
-    abi = "out/debug/signature-script-abi.json"
+    abi = "metamask-script/out/debug/metamask-script-abi.json"
 ));
 
 fn convert_eth_address(eth_wallet_address: &[u8]) -> [u8; 32] {
@@ -25,10 +25,12 @@ fn convert_eth_address(eth_wallet_address: &[u8]) -> [u8; 32] {
 
 #[tokio::test]
 async fn valid_signature_returns_true_for_validating() {
-    // Create fuel wallet
-    let mut wallets =
-        launch_custom_provider_and_get_wallets(WalletsConfig::default(), None, None).await;
-    let fuel_wallet = wallets.pop().unwrap();
+    // Create a Fuel wallet which will fund the predicate for test purposes
+    let fuel_wallet = launch_provider_and_get_wallet().await;
+
+    // Network related
+    let fuel_provider = fuel_wallet.provider().unwrap();
+    let network_info = fuel_provider.network_info().await.unwrap();
 
     // Create eth wallet and convert to EVMAddress
     let eth_wallet = LocalWallet::new(&mut thread_rng());
@@ -51,11 +53,17 @@ async fn valid_signature_returns_true_for_validating() {
 
     let signature = eth_wallet.sign_message(*tx_id).await.unwrap();
 
-    // Convert into compact format for Sway
-    let signed_tx = compact(&signature);
+    // Convert into compact format `[u8; 64]` for Sway
+    let compact_signature = compact(&signature);
 
-    // Then we add in the signed data for the witness
-    tx.append_witness(Witness::from(signed_tx.to_vec()));
+    // Add the signed data as a witness onto the Tx
+    tx.append_witness(
+        Witness::from(compact_signature.to_vec()),
+        &network_info.chain_id(),
+        &network_info.consensus_parameters,
+        &network_info.gas_costs,
+    )
+    .unwrap();
 
     // Execute the Tx
     let tx_id = fuel_wallet
@@ -80,10 +88,12 @@ async fn valid_signature_returns_true_for_validating() {
 
 #[tokio::test]
 async fn invalid_signature_returns_false_for_failed_validation() {
-    // Create fuel wallet
-    let mut wallets =
-        launch_custom_provider_and_get_wallets(WalletsConfig::default(), None, None).await;
-    let fuel_wallet = wallets.pop().unwrap();
+    // Create a Fuel wallet which will fund the predicate for test purposes
+    let fuel_wallet = launch_provider_and_get_wallet().await;
+
+    // Network related
+    let fuel_provider = fuel_wallet.provider().unwrap();
+    let network_info = fuel_provider.network_info().await.unwrap();
 
     // Create eth wallet and convert to EVMAddress
     let eth_wallet = LocalWallet::new(&mut thread_rng());
@@ -106,18 +116,26 @@ async fn invalid_signature_returns_false_for_failed_validation() {
 
     let signature = eth_wallet.sign_message(*tx_id).await.unwrap();
 
-    // Convert into compact format for Sway
-    let mut signed_tx = compact(&signature);
+    // Convert into compact format `[u8; 64]` for Sway
+    let mut compact_signature = compact(&signature);
 
-    // Invalidate the signature to force a different address to be recovered and thus fail validation
-    if signed_tx[0] < 255 {
-        signed_tx[0] += 1;
+    // Invalidate the signature to force a different address to be recovered
+    // Flipping 1 byte is sufficient to fail recovery
+    // Keep it within the bounds of a u8
+    if compact_signature[0] < 255 {
+        compact_signature[0] += 1;
     } else {
-        signed_tx[0] -= 1;
+        compact_signature[0] -= 1;
     }
 
-    // Then we add in the signed data for the witness
-    tx.append_witness(Witness::from(signed_tx.to_vec()));
+    // Add the signed data as a witness onto the Tx
+    tx.append_witness(
+        Witness::from(compact_signature.to_vec()),
+        &network_info.chain_id(),
+        &network_info.consensus_parameters,
+        &network_info.gas_costs,
+    )
+    .unwrap();
 
     // Execute the Tx
     let tx_id = fuel_wallet

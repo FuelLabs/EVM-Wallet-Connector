@@ -1,0 +1,2 @@
+[workspace]
+members = ["metamask-predicate", "metamask-script"]

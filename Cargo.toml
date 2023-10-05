@@ -1,0 +1,21 @@
+[workspace]
+members = [
+    "metamask-predicate",
+    "metamask-script",
+]
+
+[workspace.package]
+authors = ["Fuel Labs <contact@fuel.sh>"]
+version = "0.1.0"
+edition = "2021"
+homepage = "https://fuel.network/"
+license = "Apache-2.0"
+repository = "https://github.com/FuelLabs/EVM-Wallet-Connector"
+
+[workspace.dependencies]
+ethers-core = "2.0"
+ethers-signers = "2.0"
+# fuels = { version = "0.46", features = ["fuel-core-lib"] }
+fuels = { git = "https://github.com/FuelLabs/fuels-rs.git", branch = "hal3e/bug-precompute-after-add-witness" }
+fuel-tx = "0.35.3"
+tokio = { version = "1.12", features = ["rt", "macros"] }
