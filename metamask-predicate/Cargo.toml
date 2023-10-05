@@ -10,8 +10,8 @@ repository = { workspace = true }
 [dev-dependencies]
 ethers-core = { workspace = true }
 ethers-signers = { workspace = true }
-fuels = { workspace = true }
 fuel-tx = { workspace = true }
+fuels = { workspace = true }
 tokio = { workspace = true }
 
 [[test]]
