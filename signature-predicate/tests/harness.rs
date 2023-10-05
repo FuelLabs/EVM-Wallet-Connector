@@ -1,10 +1,8 @@
-use fuel_tx::{Output, Witness};
+use fuel_tx::Witness;
 use fuels::{
     accounts::predicate::Predicate,
-    prelude::{Signer, *},
+    prelude::*,
     types::{
-        coin_type::CoinType,
-        input::Input,
         transaction_builders::{ScriptTransactionBuilder, TransactionBuilder},
         Bits256, EvmAddress,
     },
@@ -32,9 +30,8 @@ fn convert_eth_address(eth_wallet_address: &[u8]) -> [u8; 32] {
 #[tokio::test]
 async fn valid_signature_returns_true_for_validating() {
     // Create fuel wallet
-    let mut wallets =
-        launch_custom_provider_and_get_wallets(WalletsConfig::default(), None, None).await;
-    let fuel_wallet = wallets.pop().unwrap();
+    let fuel_wallet = launch_provider_and_get_wallet().await;
+    let provider = fuel_wallet.provider().unwrap();
 
     // Create eth wallet and convert to EVMAddress
     let eth_wallet = LocalWallet::new(&mut thread_rng());
@@ -42,75 +39,53 @@ async fn valid_signature_returns_true_for_validating() {
     let evm_address = EvmAddress::from(Bits256(padded_eth_address));
 
     // Create the predicate by setting the signer and pass in the witness argument
-    let witness_index = 1;
+    let witness_index = 0;
+    let amount = 12;
+    let asset_id = AssetId::default();
     let configurables = MyPredicateConfigurables::new().with_SIGNER(evm_address);
+    let predicate_data = MyPredicateEncoder::encode_data(witness_index);
 
     // Create a predicate
     let predicate = Predicate::load_from(PREDICATE_BINARY_PATH)
         .unwrap()
-        .with_provider(fuel_wallet.provider().unwrap().clone())
+        .with_provider(provider.clone())
+        .with_data(predicate_data)
         .with_configurables(configurables);
 
     fuel_wallet
         .transfer(
             &predicate.address().clone(),
-            1,
-            AssetId::default(),
+            amount,
+            asset_id,
             TxParameters::default(),
         )
         .await
         .unwrap();
 
-    // Create input predicate
-    let predicate_coin = &fuel_wallet
-        .provider()
-        .unwrap()
-        .get_spendable_resources(ResourceFilter {
-            from: predicate.address().clone(),
-            asset_id: AssetId::default(),
-            amount: 1,
-            ..Default::default()
-        })
+    // Fetch input predicate
+    let inputs_predicate = predicate
+        .get_asset_inputs_for_amount(AssetId::default(), amount)
         .await
-        .unwrap()[0];
+        .unwrap();
 
-    let input_predicate = match predicate_coin {
-        CoinType::Coin(_) => Input::resource_predicate(
-            predicate_coin.clone(),
-            predicate.code().clone(),
-            MyPredicateEncoder::encode_data(witness_index),
-        ),
-        _ => panic!("Predicate coin resource type does not match"),
-    };
-
-    let inputs = vec![input_predicate];
-    let outputs = vec![Output::change(
-        predicate.address().into(),
-        0,
-        AssetId::default(),
-    )];
-
-    let consensus_parameters = fuel_wallet.provider().unwrap().consensus_parameters();
+    // Send some amount to the wallet and return the rest to the predicate
+    let amount_to_wallet = 6;
+    let outputs =
+        predicate.get_asset_outputs_for_amount(fuel_wallet.address(), asset_id, amount_to_wallet);
 
     // Create the Tx
-    let mut tb = ScriptTransactionBuilder::prepare_transfer(
-        inputs,
+    let network_info = provider.network_info().await.unwrap();
+    let tb = ScriptTransactionBuilder::prepare_transfer(
+        inputs_predicate,
         outputs,
         TxParameters::default(),
-        fuel_wallet
-            .provider()
-            .unwrap()
-            .network_info()
-            .await
-            .unwrap(),
+        network_info.clone(),
     );
-
-    fuel_wallet.sign_transaction(&mut tb);
 
     let mut tx = tb.build().unwrap();
 
     // Now that we have the Tx the ethereum wallet must sign the ID
-    let tx_id = tx.id(consensus_parameters.chain_id.into());
+    let tx_id = tx.id(network_info.chain_id());
 
     let signature = eth_wallet.sign_message(*tx_id).await.unwrap();
 
@@ -118,27 +93,20 @@ async fn valid_signature_returns_true_for_validating() {
     let signed_tx: [u8; 64] = compact(&signature);
 
     // Then we add in the signed data for the witness
-    tx.append_witness(Witness::from(signed_tx.to_vec()));
-
-    // Execute the Tx
-    let tx_id = fuel_wallet
-        .provider()
-        .unwrap()
-        .send_transaction(tx)
-        .await
+    tx.append_witness(Witness::from(signed_tx.to_vec()), &network_info)
         .unwrap();
 
-    let receipts = fuel_wallet
-        .provider()
-        .unwrap()
-        .tx_status(&tx_id)
-        .await
-        .unwrap()
-        .take_receipts();
+    // Check predicate balance before
+    let balance_before = predicate.get_asset_balance(&asset_id).await.unwrap();
+    assert_eq!(balance_before, amount);
 
-    dbg!(receipts);
+    // Execute the Tx
+    let tx_id = provider.send_transaction(tx).await.unwrap();
+    let _receipts = provider.tx_status(&tx_id).await.unwrap().take_receipts();
 
-    // assert!(response.value);
+    // Check predicate balance after
+    let balance_after = predicate.get_asset_balance(&asset_id).await.unwrap();
+    assert_eq!(balance_after, amount - amount_to_wallet);
 }
 
 // This can probably be cleaned up
@@ -155,5 +123,6 @@ fn compact(signature: &Signature) -> [u8; 64] {
     y_parity_and_s.to_big_endian(&mut s_bytes);
     sig[..32].copy_from_slice(&r_bytes);
     sig[32..64].copy_from_slice(&s_bytes);
-    return sig;
+
+    sig
 }

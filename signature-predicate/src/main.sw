@@ -40,25 +40,21 @@ configurable {
 }
 
 fn main(witness_index: u64) -> bool {
-    // return SIGNER == SIGNER;
     // Retrieve the Ethereum signature from the witness data in the Tx at the specified index.
-    let signature: Bytes = tx_witness_data(1);
-    // let signature: B512 = tx_witness_data(0);
-    // let signature: B512 = tx_witness_data(witness_index);
+    let signature: B512 = tx_witness_data(witness_index);
 
     // Hash the Fuel Tx (as the signed message) and attempt to recover the signer from the signature.
-    // let result = ec_recover_evm_address(signature, personal_sign_hash(tx_id()));
+    let result = ec_recover_evm_address(signature, personal_sign_hash(tx_id()));
 
     // If the signers match then the predicate has validated the Tx.
-    // if result.is_ok() {
-    //     if SIGNER == result.unwrap() {
-    //         return true;
-    //     }
-    // }
+    if result.is_ok() {
+        if SIGNER == result.unwrap() {
+            return true;
+        }
+    }
 
     // Otherwise, an invalid signature has been passed and we invalidate the Tx.
-    // true
-    return SIGNER == SIGNER
+    false
 }
 
 /// Return the Keccak-256 hash of the transaction ID in the format of EIP-191.
@@ -77,7 +73,7 @@ fn personal_sign_hash(transaction_id: b256) -> b256 {
     // Pointer to the data we have signed external to Sway.
     let data_ptr = asm(ptr: data.transaction_id) { ptr };
 
-    // The Ethereum prefix is 28 bytes (plus padding we exclude). 
+    // The Ethereum prefix is 28 bytes (plus padding we exclude).
     // The Tx ID is 32 bytes at the end of the prefix.
     let len_to_hash = 28 + 32;
 
