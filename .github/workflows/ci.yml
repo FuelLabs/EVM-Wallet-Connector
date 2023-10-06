@@ -76,12 +76,12 @@ jobs:
       - name: Build Sway
         run: |
           cd ${{ matrix.project }}
-          forc build --locked
+          forc build
 
       - name: Build Rust files
         run: |
           cd ${{ matrix.project }}
-          cargo build --locked
+          cargo build
 
       - name: Check Clippy Linter
         run: |
@@ -91,4 +91,4 @@ jobs:
       - name: Run Rust tests
         run: |
           cd ${{ matrix.project }}
-          cargo test --locked
+          cargo test
