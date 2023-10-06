@@ -49,7 +49,7 @@ async fn valid_signature_returns_true_for_validating() {
 
     // Now that we have the Tx the ethereum wallet must sign the ID
     let consensus_parameters = fuel_wallet.provider().unwrap().consensus_parameters();
-    let tx_id = tx.id(consensus_parameters.chain_id.into());
+    let tx_id = tx.id(consensus_parameters.chain_id);
 
     let signature = eth_wallet.sign_message(*tx_id).await.unwrap();
 
@@ -112,7 +112,7 @@ async fn invalid_signature_returns_false_for_failed_validation() {
 
     // Now that we have the Tx the ethereum wallet must sign the ID
     let consensus_parameters = fuel_wallet.provider().unwrap().consensus_parameters();
-    let tx_id = tx.id(consensus_parameters.chain_id.into());
+    let tx_id = tx.id(consensus_parameters.chain_id);
 
     let signature = eth_wallet.sign_message(*tx_id).await.unwrap();
 
@@ -172,5 +172,6 @@ fn compact(signature: &Signature) -> [u8; 64] {
     y_parity_and_s.to_big_endian(&mut s_bytes);
     sig[..32].copy_from_slice(&r_bytes);
     sig[32..64].copy_from_slice(&s_bytes);
-    return sig;
+
+    sig
 }
