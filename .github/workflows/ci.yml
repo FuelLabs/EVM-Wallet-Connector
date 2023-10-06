@@ -40,8 +40,8 @@ jobs:
       matrix:
         project:
           [
-            "signature-predicate",
-            "signature-script",
+            "metamask-predicate",
+            "metamask-script",
           ]
 
     steps:
