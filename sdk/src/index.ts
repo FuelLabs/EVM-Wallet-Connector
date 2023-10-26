@@ -1,1 +1,1 @@
-export * from './EvmWalletConnector';
+export * from './EVMWalletConnector';

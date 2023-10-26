@@ -1,29 +1,27 @@
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
-import { EVMWalletConnector } from '../src/index';
 import {
   FuelWalletConnection,
   FuelWalletLocked,
   FuelWalletProvider
 } from '@fuel-wallet/sdk';
-import { readFileSync } from 'fs';
-import { hexlify } from '@ethersproject/bytes';
 import {
   bn,
-  InputValue,
-  Predicate,
-  Address,
   Wallet,
   BaseAssetId,
-  FUEL_NETWORK_URL,
   Provider,
   ScriptTransactionRequest,
-  WalletUnlocked,
-  Signer
+  WalletUnlocked
 } from 'fuels';
 import { launchNodeAndGetWallets } from '@fuel-ts/wallet/test-utils';
 import { MockProvider } from './mockProvider';
+import {
+  EVMWalletConnector,
+  createPredicate,
+  getPredicateAddress
+} from '../src/index';
+import { predicates } from '../src/predicateResources';
 
 chai.use(chaiAsPromised);
 
@@ -45,37 +43,19 @@ describe('EVM Wallet Connector', () => {
 
   let stopProvider: any;
 
-  async function createPredicate(
-    configurables: { [name: string]: unknown } | undefined
-  ): Promise<Predicate<InputValue[]>> {
-    let filePathBin = '../simple-predicate/out/debug/simple-predicate.bin';
-    let filePathABI = '../simple-predicate/out/debug/simple-predicate-abi.json';
-    let predicateBinary = hexlify(readFileSync(filePathBin));
-    let predicateABI = JSON.parse(readFileSync(filePathABI, 'utf-8'));
-
-    const chainId = await fuelProvider.getChainId();
-    const predicate = new Predicate(
-      predicateBinary,
-      chainId,
-      predicateABI,
-      fuelProvider,
-      configurables
-    );
-    predicate.setData(1);
-
-    return predicate;
-  }
+  const bytecode = predicates['simple-predicate'].bytecode;
+  const abi = predicates['simple-predicate'].abi;
 
   before(async () => {
-    // process.env.GENESIS_SECRET = '0x6e48a022f9d4ae187bca4e2645abd62198ae294ee484766edbdaadf78160dc68';
-    // const { stop, provider } = await launchNodeAndGetWallets({
-    //   launchNodeOptions: {
-    //     chainConfigPath: `${__dirname}/chainConfig.json`,
-    //   },
-    // });
-    // let stopProvider = stop;
-    // fuelProvider = provider as any;
-    fuelProvider = new Provider(FUEL_NETWORK_URL);
+    process.env.GENESIS_SECRET =
+      '0x6e48a022f9d4ae187bca4e2645abd62198ae294ee484766edbdaadf78160dc68';
+    const { stop, provider } = await launchNodeAndGetWallets({
+      launchNodeOptions: {
+        chainConfigPath: `${__dirname}/chainConfig.json`
+      }
+    });
+    fuelProvider = provider;
+    stopProvider = stop;
   });
 
   after(() => {
@@ -88,15 +68,12 @@ describe('EVM Wallet Connector', () => {
     ethProvider = new MockProvider();
 
     const accounts = ethProvider.getAccounts();
+    const chainId = await fuelProvider.getChainId();
+
     const predicateAccounts = await Promise.all(
-      accounts.map(async (account) => {
-        const paddedAcc = account.replace('0x', '0x000000000000000000000000');
-        const configurable = {
-          SIGNER: Address.fromB256(paddedAcc).toEvmAddress()
-        };
-        const predicate = await createPredicate(configurable);
-        return predicate.address.toAddress();
-      })
+      accounts.map(async (account) =>
+        getPredicateAddress(account, chainId, bytecode, abi)
+      )
     );
 
     ethAccount1 = accounts[0]!;
@@ -188,12 +165,14 @@ describe('EVM Wallet Connector', () => {
       '0x0101010101010101010101010101010101010101010101010101010101010101';
 
     it('transfer when signer is not passed in', async () => {
-      let paddedAcc = ethAccount1.replace('0x', '0x000000000000000000000000');
-      let configurable = { SIGNER: Address.fromB256(paddedAcc).toEvmAddress() };
-      let predicate = await createPredicate(configurable);
+      let predicate = await createPredicate(
+        ethAccount1,
+        fuelProvider,
+        bytecode,
+        abi
+      );
 
-      const provider = new Provider(FUEL_NETWORK_URL);
-      const fundingWallet = new WalletUnlocked('0x01', provider);
+      const fundingWallet = new WalletUnlocked('0x01', fuelProvider);
 
       // Transfer base asset coins to predicate
       await fundingWallet
@@ -223,7 +202,7 @@ describe('EVM Wallet Connector', () => {
       const amountToTransfer = 10;
 
       // Create a recipient Wallet
-      const recipientWallet = Wallet.generate({ provider });
+      const recipientWallet = Wallet.generate({ provider: fuelProvider });
       const recipientBalanceInitial =
         await recipientWallet.getBalance(ALT_ASSET_ID);
 
@@ -239,7 +218,7 @@ describe('EVM Wallet Connector', () => {
       );
 
       // fund transaction
-      const resouces = await predicate.getResourcesToSpend([
+      const resources = await predicate.getResourcesToSpend([
         {
           assetId: BaseAssetId,
           amount: bn(1_000_000)
@@ -249,7 +228,7 @@ describe('EVM Wallet Connector', () => {
           amount: bn(1_000_000)
         }
       ]);
-      transactionRequest.addResources(resouces);
+      transactionRequest.addResources(resources);
 
       // Connect ETH account
       await connector.connect();
@@ -259,9 +238,7 @@ describe('EVM Wallet Connector', () => {
       await connector.accounts();
 
       //  Send transaction using EvmWalletConnector
-      await connector.sendTransaction(transactionRequest, {
-        url: provider.url
-      });
+      await connector.sendTransaction(transactionRequest);
 
       // Check balances are correct
       const predicateAltBalanceFinal = await predicate.getBalance(ALT_ASSET_ID);
@@ -277,12 +254,14 @@ describe('EVM Wallet Connector', () => {
     });
 
     it('transfer when the current signer is passed in', async () => {
-      let paddedAcc = ethAccount1.replace('0x', '0x000000000000000000000000');
-      let configurable = { SIGNER: Address.fromB256(paddedAcc).toEvmAddress() };
-      let predicate = await createPredicate(configurable);
+      let predicate = await createPredicate(
+        ethAccount1,
+        fuelProvider,
+        bytecode,
+        abi
+      );
 
-      const provider = new Provider(FUEL_NETWORK_URL);
-      const fundingWallet = new WalletUnlocked('0x01', provider);
+      const fundingWallet = new WalletUnlocked('0x01', fuelProvider);
 
       // Transfer base asset coins to predicate
       await fundingWallet
@@ -312,7 +291,7 @@ describe('EVM Wallet Connector', () => {
       const amountToTransfer = 10;
 
       // Create a recipient Wallet
-      const recipientWallet = Wallet.generate({ provider });
+      const recipientWallet = Wallet.generate({ provider: fuelProvider });
       const recipientBalanceInitial =
         await recipientWallet.getBalance(ALT_ASSET_ID);
 
@@ -328,7 +307,7 @@ describe('EVM Wallet Connector', () => {
       );
 
       // fund transaction
-      const resouces = await predicate.getResourcesToSpend([
+      const resources = await predicate.getResourcesToSpend([
         {
           assetId: BaseAssetId,
           amount: bn(1_000_000)
@@ -338,7 +317,7 @@ describe('EVM Wallet Connector', () => {
           amount: bn(1_000_000)
         }
       ]);
-      transactionRequest.addResources(resouces);
+      transactionRequest.addResources(resources);
 
       // Connect ETH account
       await connector.connect();
@@ -350,9 +329,7 @@ describe('EVM Wallet Connector', () => {
       //  Send transaction using EvmWalletConnector
       await connector.sendTransaction(
         transactionRequest,
-        {
-          url: provider.url
-        },
+        undefined,
         predicateAccount1
       );
 
@@ -370,12 +347,14 @@ describe('EVM Wallet Connector', () => {
     });
 
     it('transfer when a different valid signer is passed in', async () => {
-      let paddedAcc = ethAccount2.replace('0x', '0x000000000000000000000000');
-      let configurable = { SIGNER: Address.fromB256(paddedAcc).toEvmAddress() };
-      let predicate = await createPredicate(configurable);
+      let predicate = await createPredicate(
+        ethAccount2,
+        fuelProvider,
+        bytecode,
+        abi
+      );
 
-      const provider = new Provider(FUEL_NETWORK_URL);
-      const fundingWallet = new WalletUnlocked('0x01', provider);
+      const fundingWallet = new WalletUnlocked('0x01', fuelProvider);
 
       // Transfer base asset coins to predicate
       await fundingWallet
@@ -405,7 +384,7 @@ describe('EVM Wallet Connector', () => {
       const amountToTransfer = 10;
 
       // Create a recipient Wallet
-      const recipientWallet = Wallet.generate({ provider });
+      const recipientWallet = Wallet.generate({ provider: fuelProvider });
       const recipientBalanceInitial =
         await recipientWallet.getBalance(ALT_ASSET_ID);
 
@@ -421,7 +400,7 @@ describe('EVM Wallet Connector', () => {
       );
 
       // fund transaction
-      const resouces = await predicate.getResourcesToSpend([
+      const resources = await predicate.getResourcesToSpend([
         {
           assetId: BaseAssetId,
           amount: bn(1_000_000)
@@ -431,7 +410,7 @@ describe('EVM Wallet Connector', () => {
           amount: bn(1_000_000)
         }
       ]);
-      transactionRequest.addResources(resouces);
+      transactionRequest.addResources(resources);
 
       // Connect ETH account
       await connector.connect();
@@ -443,9 +422,7 @@ describe('EVM Wallet Connector', () => {
       // Send transaction using EvmWalletConnector
       await connector.sendTransaction(
         transactionRequest,
-        {
-          url: provider.url
-        },
+        undefined,
         predicateAccount2
       );
 
@@ -463,12 +440,14 @@ describe('EVM Wallet Connector', () => {
     });
 
     it('errors when an invalid signer is passed in', async () => {
-      let paddedAcc = ethAccount1.replace('0x', '0x000000000000000000000000');
-      let configurable = { SIGNER: Address.fromB256(paddedAcc).toEvmAddress() };
-      let predicate = await createPredicate(configurable);
+      let predicate = await createPredicate(
+        ethAccount1,
+        fuelProvider,
+        bytecode,
+        abi
+      );
 
-      const provider = new Provider(FUEL_NETWORK_URL);
-      const fundingWallet = new WalletUnlocked('0x01', provider);
+      const fundingWallet = new WalletUnlocked('0x01', fuelProvider);
 
       // Transfer base asset coins to predicate
       await fundingWallet
@@ -498,7 +477,7 @@ describe('EVM Wallet Connector', () => {
       const amountToTransfer = 10;
 
       // Create a recipient Wallet
-      const recipientWallet = Wallet.generate({ provider });
+      const recipientWallet = Wallet.generate({ provider: fuelProvider });
 
       // Create transfer from predicate to recipient
       const transactionRequest = new ScriptTransactionRequest({
@@ -512,7 +491,7 @@ describe('EVM Wallet Connector', () => {
       );
 
       // fund transaction
-      const resouces = await predicate.getResourcesToSpend([
+      const resources = await predicate.getResourcesToSpend([
         {
           assetId: BaseAssetId,
           amount: bn(1_000_000)
@@ -522,7 +501,7 @@ describe('EVM Wallet Connector', () => {
           amount: bn(1_000_000)
         }
       ]);
-      transactionRequest.addResources(resouces);
+      transactionRequest.addResources(resources);
 
       // Connect ETH account
       await connector.connect();
@@ -534,9 +513,7 @@ describe('EVM Wallet Connector', () => {
       await expect(
         connector.sendTransaction(
           transactionRequest,
-          {
-            url: provider.url
-          },
+          undefined,
           predicateAccount2.replaceAll('h', 'X')
         )
       ).to.be.rejectedWith('Invalid account');
@@ -589,7 +566,7 @@ describe('EVM Wallet Connector', () => {
 
   describe('getProvider()', () => {
     it('returns the fuel provider', async () => {
-      const walletProvier = new FuelWalletProvider(
+      const walletProvider = new FuelWalletProvider(
         fuelProvider.url,
         new FuelWalletConnection({
           name: 'EVM-Wallet-Connector'
@@ -598,9 +575,9 @@ describe('EVM Wallet Connector', () => {
 
       let connectorProvider = await connector.getProvider();
 
-      expect(connectorProvider.url).to.be.equal(walletProvier.url);
+      expect(connectorProvider.url).to.be.equal(walletProvider.url);
       expect(connectorProvider.walletConnection.connectorName).to.be.equal(
-        walletProvier.walletConnection.connectorName
+        walletProvider.walletConnection.connectorName
       );
     });
   });
