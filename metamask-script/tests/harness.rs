@@ -26,11 +26,11 @@ fn convert_eth_address(eth_wallet_address: &[u8]) -> [u8; 32] {
 #[tokio::test]
 async fn valid_signature_returns_true_for_validating() {
     // Create a Fuel wallet which will fund the predicate for test purposes
-    let fuel_wallet = launch_provider_and_get_wallet().await;
+    let fuel_wallet = launch_provider_and_get_wallet().await.unwrap();
 
     // Network related
     let fuel_provider = fuel_wallet.provider().unwrap();
-    let network_info = fuel_provider.network_info().await.unwrap();
+    let _network_info = fuel_provider.network_info().await.unwrap();
 
     // Create eth wallet and convert to EVMAddress
     let eth_wallet = LocalWallet::new(&mut thread_rng());
@@ -57,13 +57,7 @@ async fn valid_signature_returns_true_for_validating() {
     let compact_signature = compact(&signature);
 
     // Add the signed data as a witness onto the Tx
-    tx.append_witness(
-        Witness::from(compact_signature.to_vec()),
-        &network_info.chain_id(),
-        &network_info.consensus_parameters,
-        &network_info.gas_costs,
-    )
-    .unwrap();
+    tx.append_witness(Witness::from(compact_signature.to_vec()));
 
     // Execute the Tx
     let tx_id = fuel_wallet
@@ -89,11 +83,11 @@ async fn valid_signature_returns_true_for_validating() {
 #[tokio::test]
 async fn invalid_signature_returns_false_for_failed_validation() {
     // Create a Fuel wallet which will fund the predicate for test purposes
-    let fuel_wallet = launch_provider_and_get_wallet().await;
+    let fuel_wallet = launch_provider_and_get_wallet().await.unwrap();
 
     // Network related
     let fuel_provider = fuel_wallet.provider().unwrap();
-    let network_info = fuel_provider.network_info().await.unwrap();
+    let _network_info = fuel_provider.network_info().await.unwrap();
 
     // Create eth wallet and convert to EVMAddress
     let eth_wallet = LocalWallet::new(&mut thread_rng());
@@ -129,13 +123,7 @@ async fn invalid_signature_returns_false_for_failed_validation() {
     }
 
     // Add the signed data as a witness onto the Tx
-    tx.append_witness(
-        Witness::from(compact_signature.to_vec()),
-        &network_info.chain_id(),
-        &network_info.consensus_parameters,
-        &network_info.gas_costs,
-    )
-    .unwrap();
+    tx.append_witness(Witness::from(compact_signature.to_vec()));
 
     // Execute the Tx
     let tx_id = fuel_wallet
