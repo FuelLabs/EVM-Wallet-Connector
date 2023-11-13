@@ -1,8 +1,6 @@
 [workspace]
-members = [
-    "metamask-predicate",
-    "metamask-script",
-]
+members = ["metamask-predicate", "metamask-script"]
+resolver = "2"
 
 [workspace.package]
 authors = ["Fuel Labs <contact@fuel.sh>"]
@@ -15,7 +13,6 @@ repository = "https://github.com/FuelLabs/EVM-Wallet-Connector"
 [workspace.dependencies]
 ethers-core = "2.0"
 ethers-signers = "2.0"
-# fuels = { version = "0.46", features = ["fuel-core-lib"] }
-fuels = { git = "https://github.com/FuelLabs/fuels-rs.git", branch = "hal3e/bug-precompute-after-add-witness" }
+fuels = { version = "0.50.1", features = ["fuel-core-lib"] }
 fuel-tx = "0.35.3"
 tokio = { version = "1.12", features = ["rt", "macros"] }
