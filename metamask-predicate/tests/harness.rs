@@ -15,7 +15,7 @@ use ethers_signers::{LocalWallet, Signer as EthSigner};
 #[tokio::test]
 async fn valid_signature_transfers_funds() {
     // Create a Fuel wallet which will fund the predicate for test purposes
-    let fuel_wallet = launch_provider_and_get_wallet().await;
+    let fuel_wallet = launch_provider_and_get_wallet().await.unwrap();
 
     // Network related
     let fuel_provider = fuel_wallet.provider().unwrap();
@@ -66,14 +66,7 @@ async fn valid_signature_transfers_funds() {
     let compact_signature = compact(&signature);
 
     // Add the signed data as a witness onto the Tx
-    script_transaction
-        .append_witness(
-            Witness::from(compact_signature.to_vec()),
-            &network_info.chain_id(),
-            &network_info.consensus_parameters,
-            &network_info.gas_costs,
-        )
-        .unwrap();
+    script_transaction.append_witness(Witness::from(compact_signature.to_vec()));
 
     // Check predicate balance before sending the Tx
     let balance_before = predicate.get_asset_balance(&asset_id).await.unwrap();
@@ -94,7 +87,7 @@ async fn valid_signature_transfers_funds() {
 #[tokio::test]
 async fn invalid_signature_reverts_predicate() {
     // Create a Fuel wallet which will fund the predicate for test purposes
-    let fuel_wallet = launch_provider_and_get_wallet().await;
+    let fuel_wallet = launch_provider_and_get_wallet().await.unwrap();
 
     // Network related
     let fuel_provider = fuel_wallet.provider().unwrap();
@@ -154,14 +147,7 @@ async fn invalid_signature_reverts_predicate() {
     }
 
     // Add the signed data as a witness onto the Tx
-    script_transaction
-        .append_witness(
-            Witness::from(compact_signature.to_vec()),
-            &network_info.chain_id(),
-            &network_info.consensus_parameters,
-            &network_info.gas_costs,
-        )
-        .unwrap();
+    script_transaction.append_witness(Witness::from(compact_signature.to_vec()));
 
     // Execute the Tx, causing a revert because the predicate fails to recovery correct address
     let tx_result = fuel_provider.send_transaction(script_transaction).await;
