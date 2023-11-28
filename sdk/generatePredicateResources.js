@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const predicates = ['simple-predicate', 'tautology-predicate'];
+const predicates = ['metamask-predicate'];
 
 let code = 'export const predicates = {\n';
 

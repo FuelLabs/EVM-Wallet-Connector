@@ -25,6 +25,8 @@ import { predicates } from '../src/predicateResources';
 
 chai.use(chaiAsPromised);
 
+const predicate = 'metamask-predicate';
+
 describe('EVM Wallet Connector', () => {
   // Providers used to interact with wallets
   let ethProvider: MockProvider;
@@ -43,8 +45,8 @@ describe('EVM Wallet Connector', () => {
 
   let stopProvider: any;
 
-  const bytecode = predicates['simple-predicate'].bytecode;
-  const abi = predicates['simple-predicate'].abi;
+  const bytecode = predicates[predicate].bytecode;
+  const abi = predicates[predicate].abi;
 
   before(async () => {
     process.env.GENESIS_SECRET =
@@ -547,9 +549,11 @@ describe('EVM Wallet Connector', () => {
         predicateAccount1,
         new FuelWalletProvider(
           fuelProvider.url,
-          new FuelWalletConnection({
-            name: 'EVM-Wallet-Connector'
-          })
+          {
+            walletConnection: new FuelWalletConnection({
+              name: 'EVM-Wallet-Connector'
+            })
+          }
         )
       );
 
@@ -568,9 +572,11 @@ describe('EVM Wallet Connector', () => {
     it('returns the fuel provider', async () => {
       const walletProvider = new FuelWalletProvider(
         fuelProvider.url,
-        new FuelWalletConnection({
-          name: 'EVM-Wallet-Connector'
-        })
+        {
+          walletConnection: new FuelWalletConnection({
+            name: 'EVM-Wallet-Connector'
+          })
+        }
       );
 
       let connectorProvider = await connector.getProvider();

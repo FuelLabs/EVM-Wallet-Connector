@@ -45,7 +45,7 @@ export class EVMWalletConnector {
     ethProvider: EIP1193Provider,
     fuelProvider: Provider,
     {
-      predicate = 'simple-predicate'
+      predicate = 'metamask-predicate'
     }: { predicate?: keyof typeof predicates } = {}
   ) {
     this.ethProvider = ethProvider;
@@ -221,10 +221,13 @@ export class EVMWalletConnector {
   async getProvider(): Promise<FuelWalletProvider> {
     const walletProver = new FuelWalletProvider(
       this.fuelProvider.url,
-      new FuelWalletConnection({
-        name: 'EVM-Wallet-Connector'
-      })
-    );
+      {
+        walletConnection: new FuelWalletConnection({
+          name: 'EVM-Wallet-Connector'
+        })
+      }
+    )
+    ;
     return walletProver;
   }
 
