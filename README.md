@@ -1,17 +1,15 @@
 # Setup
 
-## Predicate
+## Signature verification predicate
 
-The `simple-predicate` project needs to be compiled.
-
-> Note: this ought to be replaced with the project [Signature Verification](https://github.com/FuelLabs/EVM-Wallet-Connector/pull/1) once the Rust testing issue is resolved.
+The `signature-verification` project needs to be compiled.
 
 Requirement: have `forc` installed.
 
 To compile the predicate run
 
 ```bash
-cd simple-predicate
+cd signature-verification
 forc build
 ```
 
@@ -29,32 +27,6 @@ pnpm install
 ```
 
 > Note: There may be remnants of dependencies that are no longer used or ought to be replaced so the `package.json` file must be looked at prior to "production" to prune unnecessary packages
-
-### Preparing to run the tests
-
-Starting nodes.
-
-#### Hardhat
-
-This package is likely to be removed entirely. Until then, it looks like we must start a node ourselves in a terminal because running the test command on its own does not spin up a node in-memory.
-
-Requirement: `npx`, `hardhat`
-
-```bash
-cd sdk
-npx hardhat node
-```
-
-#### Fuel
-
-It looks like the TypeScript SDK has removed the docs for running an in-memory node so we will run it ourselves in another terminal.
-
-Requirements: `fuel-core`
-
-```bash
-cd simple-predicate
-fuel-core run --db-type in-memory --chain ../sdk/test/chainConfig.json
-```
 
 ### Running the tests
 
