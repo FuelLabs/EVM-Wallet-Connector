@@ -25,7 +25,7 @@ import { predicates } from '../src/predicateResources';
 
 chai.use(chaiAsPromised);
 
-const predicate = 'metamask-predicate';
+const predicate = 'verification-predicate';
 
 describe('EVM Wallet Connector', () => {
   // Providers used to interact with wallets

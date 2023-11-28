@@ -1,5 +1,5 @@
 [package]
-name = "metamask-predicate"
+name = "verification-predicate"
 description = "A cargo-generate template for Rust + Sway integration testing."
 version = { workspace = true }
 edition = { workspace = true }

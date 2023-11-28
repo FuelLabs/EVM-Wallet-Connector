@@ -1,5 +1,5 @@
 [workspace]
-members = ["metamask-predicate", "metamask-script"]
+members = ["verification-predicate", "verification-script"]
 resolver = "2"
 
 [workspace.package]

@@ -2,8 +2,8 @@
 
 The repository consists of 2 projects
 
-- Metamask Predicate
-- Metamask Script
+- verification-predicate
+- verification-predicate
 
 The Script exists for the purpose of debugging the predicate.
 Scripts can emit logs while predicates cannot therefore values may be inspected in the script.

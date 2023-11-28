@@ -1,11 +1,11 @@
 const fs = require('fs');
 
-const predicates = ['metamask-predicate'];
+const predicates = ['verification-predicate'];
 
 let code = 'export const predicates = {\n';
 
 predicates.forEach((predicate) => {
-  const outputDirectory =  `${__dirname}/../${predicate}/out/debug`;
+  const outputDirectory =  `${__dirname}/../signature-verification/${predicate}/out/debug`;
   const abiPath = `${outputDirectory}/${predicate}-abi.json`;
   const bytecodePath = `${outputDirectory}/${predicate}.bin`;
 

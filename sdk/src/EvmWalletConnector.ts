@@ -45,7 +45,7 @@ export class EVMWalletConnector {
     ethProvider: EIP1193Provider,
     fuelProvider: Provider,
     {
-      predicate = 'metamask-predicate'
+      predicate = 'verification-predicate'
     }: { predicate?: keyof typeof predicates } = {}
   ) {
     this.ethProvider = ethProvider;
