@@ -2,6 +2,7 @@ predicate;
 
 use std::{
     b512::B512,
+    bytes::Bytes,
     constants::ZERO_B256,
     tx::{
         tx_id,
@@ -39,6 +40,7 @@ configurable {
 }
 
 fn main(witness_index: u64) -> bool {
+    // Retrieve the Ethereum signature from the witness data in the Tx at the specified index.
     let signature: B512 = tx_witness_data(witness_index);
 
     // Hash the Fuel Tx (as the signed message) and attempt to recover the signer from the signature.
@@ -71,7 +73,7 @@ fn personal_sign_hash(transaction_id: b256) -> b256 {
     // Pointer to the data we have signed external to Sway.
     let data_ptr = asm(ptr: data.transaction_id) { ptr };
 
-    // The Ethereum prefix is 28 bytes (plus padding we exclude). 
+    // The Ethereum prefix is 28 bytes (plus padding we exclude).
     // The Tx ID is 32 bytes at the end of the prefix.
     let len_to_hash = 28 + 32;
 
