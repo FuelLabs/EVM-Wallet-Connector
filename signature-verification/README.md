@@ -5,6 +5,8 @@ The repository consists of 2 projects
 - verification-predicate
 - verification-predicate
 
+The predicate is used to verify the signer in a transaction is that of a specific EVM wallet.
+
 The Script exists for the purpose of debugging the predicate.
 Scripts can emit logs while predicates cannot therefore values may be inspected in the script.
 
