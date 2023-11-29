@@ -32,8 +32,8 @@ import { EIP1193Provider } from './eip-1193';
 import { getPredicateRoot } from './getPredicateRoot';
 import { predicates } from './predicateResources';
 
-// export class EVMWalletConnector extends FuelWalletConnection {
-export class EVMWalletConnector {
+export class EVMWalletConnector extends FuelWalletConnection {
+// export class EVMWalletConnector {
   ethProvider: EIP1193Provider;
 
   // Our signer used to interact with the network
@@ -48,6 +48,7 @@ export class EVMWalletConnector {
       predicate = 'verification-predicate'
     }: { predicate?: keyof typeof predicates } = {}
   ) {
+    super();
     this.ethProvider = ethProvider;
     this.fuelProvider = fuelProvider;
 
@@ -89,7 +90,7 @@ export class EVMWalletConnector {
     return accounts;
   }
 
-  async currentAccount(): Promise<string | null> {
+  async currentAccount(): Promise<string> {
     if (!(await this.isConnected())) {
       throw Error('No connected accounts');
     }
@@ -99,7 +100,7 @@ export class EVMWalletConnector {
     });
 
     if (ethAccounts.length === 0) {
-      return null;
+      throw Error('No accounts found');
     }
 
     const fuelAccount = getPredicateAddress(

@@ -37,8 +37,6 @@ pnpm test
 
 # Todo
 
-- Replace any `node` dependencies / calls to enable compatibility with the browser and running locally (use a bundler such as `webpack`)
-- Replace any library dependencies, such as `ethers.js` (https://viem.sh/ or JSON-RPC?) and `hardhat` (mock EIP-1193 provider?), to generalize the connector
 - Implement listener for events such as changing accounts
 - When `FuelWalletConnection` is not constrained to the use of `window.ethereum` extend the connector with the connection
 - Add infrastructure (CI) to check code formatting and run tests upon pull requests
