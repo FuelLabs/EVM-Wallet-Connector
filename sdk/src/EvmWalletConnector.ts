@@ -2,12 +2,12 @@ import type {
   AbiMap,
   Asset,
   FuelProviderConfig,
-  Network
 } from '@fuel-wallet/types';
 import {
-  FuelWalletConnection,
+  FuelWalletConnector,
   FuelWalletLocked,
-  FuelWalletProvider
+  FuelWalletProvider,
+  Network
 } from '@fuel-wallet/sdk';
 import {
   JsonAbi,
@@ -17,7 +17,8 @@ import {
   transactionRequestify,
   hashTransaction,
   Provider,
-  InputValue
+  InputValue,
+  ProviderOptions
 } from 'fuels';
 import {
   BytesLike,
@@ -32,8 +33,7 @@ import { EIP1193Provider } from './eip-1193';
 import { getPredicateRoot } from './getPredicateRoot';
 import { predicates } from './predicateResources';
 
-export class EVMWalletConnector extends FuelWalletConnection {
-// export class EVMWalletConnector {
+export class EVMWalletConnector extends FuelWalletConnector {
   ethProvider: EIP1193Provider;
 
   // Our signer used to interact with the network
@@ -119,7 +119,8 @@ export class EVMWalletConnector extends FuelWalletConnection {
   }
 
   async sendTransaction(
-    transaction: TransactionRequestLike & { signer?: string },
+    address: string,
+    transaction: TransactionRequestLike,
     _providerConfig?: FuelProviderConfig,
     signer?: string
   ): Promise<string> {
@@ -216,20 +217,20 @@ export class EVMWalletConnector extends FuelWalletConnection {
 
     const provider = await this.getProvider();
 
-    return new FuelWalletLocked(address, provider);
+    return new FuelWalletLocked(address, this, provider);
   }
 
   async getProvider(): Promise<FuelWalletProvider> {
-    const walletProver = new FuelWalletProvider(
+    const options: ProviderOptions & { walletConnection: FuelWalletConnector } = {
+      walletConnection: new FuelWalletConnector('EVM-Wallet-Connector'
+      ),
+    };
+  
+    const walletProvider = await FuelWalletProvider.create(
       this.fuelProvider.url,
-      {
-        walletConnection: new FuelWalletConnection({
-          name: 'EVM-Wallet-Connector'
-        })
-      }
-    )
-    ;
-    return walletProver;
+      options
+    );
+    return walletProvider;
   }
 
   async addAbi(abiMap: AbiMap): Promise<boolean> {
@@ -245,18 +246,18 @@ export class EVMWalletConnector extends FuelWalletConnection {
     return false;
   }
 
-  async network(): Promise<FuelProviderConfig> {
+  async network(): Promise<Network> {
     const chainId = await this.fuelProvider.getChainId();
-    return { id: chainId.toString(), url: this.fuelProvider.url };
+    return { url: this.fuelProvider.url, chainId: chainId };
   }
 
-  async networks(): Promise<FuelProviderConfig[]> {
+  async networks(): Promise<Network[]> {
     return [await this.network()];
   }
 
-  async addNetwork(network: Network): Promise<boolean> {
+  async addNetwork(networkUrl: string): Promise<boolean> {
     throw new Error('Not implemented');
-  }
+  }  
 
   // on<E extends FuelEvents['type'], D extends FuelEventArg<E>>(
   //   eventName: E,
