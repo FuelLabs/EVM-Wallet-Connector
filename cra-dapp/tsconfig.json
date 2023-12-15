@@ -15,7 +15,7 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["node"],
+    "types": ["node", "@fuels/wallet-connector-evm"],
   },
   "include": ["src"]
 }

@@ -3,7 +3,7 @@ import { Provider } from 'fuels';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
-import { EVMWalletConnector } from '@fuels/wallet-connector-evm/dist/src/EvmWalletConnector';
+import { EVMWalletConnector } from '@fuels/wallet-connector-evm';
 
 import './index.css';
 import App from './App';

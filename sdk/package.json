@@ -1,14 +1,23 @@
 {
 	"name": "@fuels/wallet-connector-evm",
 	"version": "0.0.2",
-	"main": "dist/src/index.js",
+	"type": "module",
 	"files": [
 		"dist"
 	],
+	"main": "./dist/wallet-connector-evm.umd.cjs",
+	"module": "./dist/wallet-connector-evm.js",
+	"exports": {
+		".": {
+			"import": "./dist/wallet-connector-evm.js",
+			"require": "./dist/wallet-connector-evm.umd.cjs"
+		}
+	},
+	"types": "./dist/index.d.ts",
 	"scripts": {
-		"build": "node generatePredicateResources.js && tsc",
+		"build": "tsx generatePredicateResources.ts && tsc && vite build",
 		"fmt": "prettier --config .prettierrc 'src/*.ts' 'test/*.ts' --write",
-		"test": "node generatePredicateResources.js && mocha --require ts-node/register  test/*.test.ts"
+		"test": "tsx generatePredicateResources.ts && mocha --require ts-node/register  test/*.test.ts"
 	},
 	"dependencies": {
 		"@ethereumjs/util": "^9.0.1",
@@ -36,7 +45,10 @@
 		"prettier": "^3.1.1",
 		"ts-loader": "^9.5.1",
 		"ts-node": "^10.9.2",
+		"tsx": "^4.6.2",
 		"typescript": "~5.2.2",
+		"vite": "^5.0.9",
+		"vite-plugin-dts": "^3.6.4",
 		"webpack": "^5.89.0",
 		"webpack-cli": "^5.1.4"
 	}

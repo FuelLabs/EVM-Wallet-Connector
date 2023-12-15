@@ -1,6 +1,12 @@
 import chai, { expect } from 'chai';
 import chaiAsPromised from 'chai-as-promised';
 
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import type {
   Asset
 } from '@fuel-wallet/types';
