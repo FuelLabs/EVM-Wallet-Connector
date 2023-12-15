@@ -11,7 +11,7 @@
 		"test": "node generatePredicateResources.js && mocha --require ts-node/register  test/*.test.ts"
 	},
 	"dependencies": {
-		"@ethereumjs/util": "^9.0.0",
+		"@ethereumjs/util": "^9.0.1",
 		"@ethersproject/bytes": "^5.7.0",
 		"@fuel-wallet/sdk": "0.14.0-preview-a651bbe",
 		"@fuel-wallet/types": "0.14.0-preview-a651bbe",
@@ -25,19 +25,19 @@
 		"@fuel-ts/utils": "^0.67.0",
 		"@fuel-ts/wallet": "^0.67.0",
 		"@fuels/ts-config": "^0.1.4",
-		"@types/chai": "^4.3.6",
-		"@types/chai-as-promised": "^7.1.6",
-		"@types/memoizee": "^0.4.9",
-		"@types/mocha": "^10.0.1",
-		"@types/node": "^20.6.0",
-		"chai": "^4.3.8",
+		"@types/chai": "^4.3.11",
+		"@types/chai-as-promised": "^7.1.8",
+		"@types/memoizee": "^0.4.11",
+		"@types/mocha": "^10.0.6",
+		"@types/node": "^20.10.4",
+		"chai": "^4.3.10",
 		"chai-as-promised": "^7.1.1",
 		"mocha": "^10.2.0",
-		"prettier": "^3.0.3",
-		"ts-loader": "^9.4.4",
-		"ts-node": "^10.9.1",
+		"prettier": "^3.1.1",
+		"ts-loader": "^9.5.1",
+		"ts-node": "^10.9.2",
 		"typescript": "~5.2.2",
-		"webpack": "^5.88.2",
+		"webpack": "^5.89.0",
 		"webpack-cli": "^5.1.4"
 	}
 }
