@@ -25,7 +25,8 @@
 		"@fuel-wallet/sdk": "0.14.0-preview-a651bbe",
 		"@fuel-wallet/types": "0.14.0-preview-a651bbe",
 		"fuels": "^0.67.0",
-		"memoizee": "^0.4.15"
+		"memoizee": "^0.4.15",
+		"json-rpc-2.0": "^1.6.0"
 	},
 	"devDependencies": {
 		"@fuel-ts/fuel-core": "^0.67.0",
