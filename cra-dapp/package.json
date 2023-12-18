@@ -7,7 +7,7 @@
     "@fuels/wallet-connector-evm": "file:../sdk",
     "@types/node": "^16.18.68",
     "@types/react": "^18.2.45",
-    "@types/react-dom": "^18.2.17",
+    "@types/react-dom": "^18.2.18",
     "crypto-browserify": "^3.12.0",
     "fuels": "^0.67.0",
     "react": "^18.2.0",

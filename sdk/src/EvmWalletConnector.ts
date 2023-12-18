@@ -1,8 +1,4 @@
-import type {
-  AbiMap,
-  Asset,
-  FuelProviderConfig,
-} from '@fuel-wallet/types';
+import type { AbiMap, Asset, FuelProviderConfig } from '@fuel-wallet/types';
 import {
   FuelWalletConnector,
   FuelWalletLocked,
@@ -221,11 +217,11 @@ export class EVMWalletConnector extends FuelWalletConnector {
   }
 
   async getProvider(): Promise<FuelWalletProvider> {
-    const options: ProviderOptions & { walletConnection: FuelWalletConnector } = {
-      walletConnection: new FuelWalletConnector('EVM-Wallet-Connector'
-      ),
-    };
-  
+    const options: ProviderOptions & { walletConnection: FuelWalletConnector } =
+      {
+        walletConnection: new FuelWalletConnector('EVM-Wallet-Connector')
+      };
+
     const walletProvider = await FuelWalletProvider.create(
       this.fuelProvider.url,
       options
@@ -257,7 +253,7 @@ export class EVMWalletConnector extends FuelWalletConnector {
 
   async addNetwork(networkUrl: string): Promise<boolean> {
     throw new Error('Not implemented');
-  }  
+  }
 
   // on<E extends FuelEvents['type'], D extends FuelEventArg<E>>(
   //   eventName: E,

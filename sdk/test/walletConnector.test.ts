@@ -7,9 +7,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import type {
-  Asset
-} from '@fuel-wallet/types';
+import type { Asset } from '@fuel-wallet/types';
 import {
   FuelWalletConnector,
   FuelWalletLocked,
@@ -564,17 +562,18 @@ describe('EVM Wallet Connector', () => {
     it('returns a predicate wallet', async () => {
       await connector.connect();
       let wallet = await connector.getWallet(predicateAccount1);
-      
-      const options: ProviderOptions & { walletConnection: FuelWalletConnector } = {
-        walletConnection: new FuelWalletConnector('EVM-Wallet-Connector'
-        ),
+
+      const options: ProviderOptions & {
+        walletConnection: FuelWalletConnector;
+      } = {
+        walletConnection: new FuelWalletConnector('EVM-Wallet-Connector')
       };
-    
+
       const walletProvider = await FuelWalletProvider.create(
         fuelProvider.url,
         options
       );
-      
+
       let expectedWallet = new FuelWalletLocked(
         predicateAccount1,
         connector,
@@ -594,16 +593,17 @@ describe('EVM Wallet Connector', () => {
 
   describe('getProvider()', () => {
     it('returns the fuel provider', async () => {
-      const options: ProviderOptions & { walletConnection: FuelWalletConnector } = {
-        walletConnection: new FuelWalletConnector('EVM-Wallet-Connector'
-        ),
+      const options: ProviderOptions & {
+        walletConnection: FuelWalletConnector;
+      } = {
+        walletConnection: new FuelWalletConnector('EVM-Wallet-Connector')
       };
-    
+
       const walletProvider = await FuelWalletProvider.create(
         fuelProvider.url,
         options
       );
-      
+
       let connectorProvider = await connector.getProvider();
 
       expect(connectorProvider.url).to.be.equal(walletProvider.url);
@@ -659,9 +659,9 @@ describe('EVM Wallet Connector', () => {
 
   describe('addNetwork()', () => {
     it('throws error', async () => {
-      await expect(
-        connector.addNetwork('')
-      ).to.be.rejectedWith('Not implemented');
+      await expect(connector.addNetwork('')).to.be.rejectedWith(
+        'Not implemented'
+      );
     });
   });
 });
