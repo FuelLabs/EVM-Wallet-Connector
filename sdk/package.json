@@ -25,8 +25,8 @@
 		"@fuel-wallet/sdk": "0.14.0-preview-d4d57b4",
 		"@fuel-wallet/types": "0.14.0-preview-d4d57b4",
 		"fuels": "^0.67.0",
-		"memoizee": "^0.4.15",
-		"json-rpc-2.0": "^1.6.0"
+		"json-rpc-2.0": "^1.7.0",
+		"memoizee": "^0.4.15"
 	},
 	"devDependencies": {
 		"@fuel-ts/fuel-core": "^0.67.0",
@@ -46,7 +46,7 @@
 		"prettier": "^3.1.1",
 		"ts-loader": "^9.5.1",
 		"ts-node": "^10.9.2",
-		"tsx": "^4.6.2",
+		"tsx": "^4.7.0",
 		"typescript": "~5.2.2",
 		"vite": "^5.0.10",
 		"vite-plugin-dts": "^3.6.4",

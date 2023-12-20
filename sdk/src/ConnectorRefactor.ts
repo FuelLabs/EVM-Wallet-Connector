@@ -1,17 +1,5 @@
 import {
-  MessageTypes,
-  EVENT_MESSAGE,
-  CONTENT_SCRIPT_NAME,
-  CONNECTOR_SCRIPT,
   FuelProviderConfig
-} from '@fuel-wallet/types';
-import type {
-  Asset,
-  ResponseMessage,
-  EventMessage,
-  CommunicationMessage,
-  AssetData,
-  AssetFuel
 } from '@fuel-wallet/types';
 import {
   Provider,
@@ -25,7 +13,6 @@ import {
 } from 'fuels';
 import {
   FuelConnector,
-  FuelConnectorEventTypes,
   Network,
   ConnectorMetadata,
   Version
@@ -38,9 +25,6 @@ import {
 } from '@ethersproject/bytes';
 import { hexToBytes } from '@ethereumjs/util';
 import memoize from 'memoizee';
-import type { JSONRPCRequest } from 'json-rpc-2.0';
-import { JSONRPCClient } from 'json-rpc-2.0';
-
 import { EIP1193Provider } from './eip-1193';
 import { getPredicateRoot } from './getPredicateRoot';
 import { predicates } from './predicateResources';
@@ -52,7 +36,7 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   // @ts-expect-error
   fuelProvider: Provider;
   private predicate: { abi: any; bytecode: Uint8Array };
-  readonly client: JSONRPCClient;
+  // readonly client: JSONRPCClient;
 
   metadata: ConnectorMetadata = {
     image: '/connectors/fuel-wallet.svg',
@@ -67,17 +51,8 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   constructor() {
     super();
     this.name = 'EVM wallet connector';
-    this.setupConnector();
     this.predicate = predicates['verification-predicate'];
     this.installed = true;
-
-    //
-    this.setMaxListeners(100);
-    this.setupListener();
-    this.client = new JSONRPCClient(
-      this.sendRequest.bind(this),
-      this.createRequestId
-    );
   }
 
   /**
@@ -85,7 +60,13 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
    * Application communication methods
    * ============================================================
    */
-  private async setupConnector() {
+  private async getProviders() {
+    if (this.fuelProvider && this.ethProvider) {
+      return {
+        fuelProvider: this.fuelProvider,
+        ethProvider: this.ethProvider
+      };
+    }
     if (typeof window !== 'undefined') {
       // @ts-expect-error
       const ethProvider = window.ethereum;
@@ -101,74 +82,14 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
         throw new Error('Fuel provider not found');
       }
       this.fuelProvider = fuelProvider;
+
+      return {
+        fuelProvider: this.fuelProvider,
+        ethProvider: this.ethProvider
+      };
     }
+    throw new Error('window.ethereum not found!');
   }
-
-  private acceptMessage(message: MessageEvent<CommunicationMessage>): boolean {
-    const { data: event } = message;
-    return (
-      message.origin === window.origin &&
-      event.type !== MessageTypes.request &&
-      event.connectorName === this.name &&
-      event.target === CONNECTOR_SCRIPT
-    );
-  }
-
-  private setupListener() {
-    if (typeof window === 'undefined') return;
-    window.addEventListener(EVENT_MESSAGE, this.onMessage.bind(this));
-  }
-
-  private createRequestId(): string {
-    return crypto.randomUUID();
-  }
-
-  private postMessage(message: CommunicationMessage, origin?: string) {
-    window.postMessage(message, origin || window.origin);
-  }
-
-  private async sendRequest(request: JSONRPCRequest | null) {
-    if (!request) return;
-    this.postMessage({
-      type: MessageTypes.request,
-      target: CONTENT_SCRIPT_NAME,
-      connectorName: this.name,
-      request
-    });
-  }
-
-  private onResponse(message: ResponseMessage): void {
-    this.client.receive(message.response);
-  }
-
-  private onEvent(message: EventMessage): void {
-    message.events.forEach((eventData) => {
-      if (eventData.event === 'start') {
-        this.setupConnector();
-      } else {
-        this.emit(eventData.event, ...eventData.params);
-      }
-    });
-  }
-
-  private onMessage = (message: MessageEvent<CommunicationMessage>) => {
-    const messageFroze = Object.freeze(message);
-    if (!this.acceptMessage(messageFroze)) return;
-    const { data: event } = messageFroze;
-    this.onCommunicationMessage(event);
-  };
-
-  private onCommunicationMessage = (message: CommunicationMessage) => {
-    switch (message.type) {
-      case MessageTypes.response:
-        this.onResponse(message);
-        break;
-      case MessageTypes.event:
-        this.onEvent(message);
-        break;
-      default:
-    }
-  };
 
   /**
    * ============================================================
@@ -177,7 +98,6 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
    */
 
   async isConnected(): Promise<boolean> {
-    console.log('first line');
     try {
       const accounts = await this.accounts();
       console.log('isConnected called', accounts);
@@ -189,6 +109,7 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   }
 
   async ping(): Promise<boolean> {
+    await this.getProviders();
     console.log('ping pong');
     return true;
   }
@@ -203,18 +124,26 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
 
   async connect(): Promise<boolean> {
     // Q: How does this ensure connection?
-    await this.ethProvider.request({ method: 'eth_requestAccounts' });
+    const { ethProvider } = await this.getProviders();
+    await ethProvider.request({ method: 'eth_requestAccounts' });
     this.connected = true;
     return true;
   }
 
   async accounts(): Promise<Array<string>> {
     // Get the ethereum accounts
-    const ethAccounts: Array<string> = await this.ethProvider.request({
+    const { ethProvider, fuelProvider } = await this.getProviders();
+    const ethAccounts: Array<string> = await ethProvider.request({
       method: 'eth_accounts'
     });
+    //
+    console.log('ethAccounts', ethAccounts);
+    //
 
-    const chainId = this.fuelProvider.getChainId();
+    const chainId = fuelProvider.getChainId();
+    //
+    console.log('chainId', chainId);
+    //
     const accounts = ethAccounts.map((account) =>
       getPredicateAddress(
         account,
@@ -232,7 +161,8 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
       throw Error('No connected accounts');
     }
 
-    const ethAccounts: string[] = await this.ethProvider.request({
+    const { ethProvider, fuelProvider } = await this.getProviders();
+    const ethAccounts: string[] = await ethProvider.request({
       method: 'eth_accounts'
     });
 
@@ -242,7 +172,7 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
 
     const fuelAccount = getPredicateAddress(
       ethAccounts[0]!,
-      this.fuelProvider.getChainId(),
+      fuelProvider.getChainId(),
       this.predicate.bytecode,
       this.predicate.abi
     );
@@ -259,10 +189,12 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
     if (!(await this.isConnected())) {
       throw Error('No connected accounts');
     }
-    const ethAccounts: Array<string> = await this.ethProvider.request({
+
+    const { ethProvider, fuelProvider } = await this.getProviders();
+    const ethAccounts: Array<string> = await ethProvider.request({
       method: 'eth_accounts'
     });
-    const chainId = this.fuelProvider.getChainId();
+    const chainId = fuelProvider.getChainId();
     const accounts = ethAccounts.map((account) => ({
       ethAccount: account,
       predicateAccount: getPredicateAddress(
@@ -285,11 +217,11 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
     // Create a predicate and set the witness index to call in predicate`
     const predicate = createPredicate(
       account.ethAccount,
-      this.fuelProvider,
+      fuelProvider,
       this.predicate.bytecode,
       this.predicate.abi
     );
-    predicate.connect(this.fuelProvider);
+    predicate.connect(fuelProvider);
     predicate.setData(transactionRequest.witnesses.length);
 
     // Attach missing inputs (including estimated predicate gas usage) / outputs to the request
@@ -315,9 +247,9 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
     transactionRequest.witnesses.push(compactSignature);
 
     const transactionWithPredicateEstimated =
-      await this.fuelProvider.estimatePredicates(requestWithPredicateAttached);
+      await fuelProvider.estimatePredicates(requestWithPredicateAttached);
 
-    const response = await this.fuelProvider.operations.submit({
+    const response = await fuelProvider.operations.submit({
       encodedTransaction: hexlify(
         transactionWithPredicateEstimated.toTransactionBytes()
       )
@@ -327,8 +259,9 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   }
 
   async currentNetwork(): Promise<Network> {
-    const chainId = this.fuelProvider.getChainId();
-    return { url: this.fuelProvider.url, chainId: chainId };
+    const { fuelProvider } = await this.getProviders();
+    const chainId = fuelProvider.getChainId();
+    return { url: fuelProvider.url, chainId: chainId };
   }
 
   async networks(): Promise<Network[]> {
