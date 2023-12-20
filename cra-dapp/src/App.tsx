@@ -3,7 +3,7 @@ import {
   useAccounts,
   useDisconnect,
   useConnectUI,
-  useIsConnected,
+  useIsConnected, useFuel, useConnectors
 } from '@fuel-wallet/react';
 import './App.css';
 

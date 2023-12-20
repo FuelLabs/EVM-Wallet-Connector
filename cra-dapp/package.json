@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@fuel-wallet/react": "0.14.0-preview-a651bbe",
+    "@fuel-wallet/react": "0.14.0-preview-d4d57b4",
     "@fuels/wallet-connector-evm": "file:../sdk",
     "@types/node": "^16.18.68",
     "@types/react": "^18.2.45",

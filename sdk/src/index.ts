@@ -1,2 +1,2 @@
 export * from './EvmWalletConnector';
-export {EVMWalletConnectorRefactor} from './ConnectorRefactor';
+export { EVMWalletConnectorRefactor } from './ConnectorRefactor';

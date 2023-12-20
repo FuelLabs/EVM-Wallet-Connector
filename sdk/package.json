@@ -22,8 +22,8 @@
 	"dependencies": {
 		"@ethereumjs/util": "^9.0.1",
 		"@ethersproject/bytes": "^5.7.0",
-		"@fuel-wallet/sdk": "0.14.0-preview-a651bbe",
-		"@fuel-wallet/types": "0.14.0-preview-a651bbe",
+		"@fuel-wallet/sdk": "0.14.0-preview-d4d57b4",
+		"@fuel-wallet/types": "0.14.0-preview-d4d57b4",
 		"fuels": "^0.67.0",
 		"memoizee": "^0.4.15",
 		"json-rpc-2.0": "^1.6.0"
