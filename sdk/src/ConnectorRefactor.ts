@@ -36,6 +36,8 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   // @ts-expect-error
   fuelProvider: Provider;
   private predicate: { abi: any; bytecode: Uint8Array };
+  private setupLock: boolean = false;
+  private _currentAccount: string | null = null;
 
   // metadata is needed, but the current is a placeholder
   metadata: ConnectorMetadata = {
@@ -84,6 +86,42 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
     return { fuelProvider: this.fuelProvider, ethProvider: this.ethProvider };
   }
 
+  async setup() {
+    if (this.setupLock) return;
+    this.setupLock = true;
+    await this.setupCurrentAccount();
+    await this.setupEventBridge();
+  }
+
+  async setupEventBridge() {
+    console.log('setupEventBridge');
+    const { ethProvider } = await this.getProviders();
+    ethProvider.on('accountsChanged', async (accounts) => {
+      this.emit('accounts', await this.accounts());
+      if (this._currentAccount !== accounts[0]) {
+        await this.setupCurrentAccount();
+      }
+    });
+    ethProvider.on('connect', async (arg) => {
+      console.log('connect', arg);
+      this.emit('connection', await this.isConnected());
+    });
+    ethProvider.on('disconnect', async (arg) => {
+      console.log('disconnect', arg);
+      this.emit('connection', await this.isConnected());
+    });
+  }
+
+  async setupCurrentAccount() {
+    try {
+      const [currentAccount = null] = await this.accounts();
+      this._currentAccount = currentAccount;
+      this.emit('currentAccount', currentAccount);
+    } catch (err) {
+      console.log('setupCurrentAccount', err);
+    }
+  }
+
   /**
    * ============================================================
    * Connector methods
@@ -92,6 +130,7 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
 
   async ping(): Promise<boolean> {
     await this.getProviders();
+    await this.setup();
     return true;
   }
 
@@ -126,16 +165,35 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   }
 
   async connect(): Promise<boolean> {
-    const { ethProvider } = await this.getProviders();
-    await ethProvider.request({ method: 'eth_requestAccounts' });
+    if (!(await this.isConnected())) {
+      const { ethProvider } = await this.getProviders();
+      await ethProvider.request({
+        method: 'wallet_requestPermissions',
+        params: [
+          {
+            eth_accounts: {}
+          }
+        ]
+      });
+    }
     this.connected = true;
     return true;
   }
 
   async disconnect(): Promise<boolean> {
-    // TODO: actually disconnect via event: ethereum.on('disconnect', handler: (error: ProviderRpcError) => void);
-    console.warn('disconnect() not yet implemented');
-    return false;
+    if (await this.isConnected()) {
+      const { ethProvider } = await this.getProviders();
+      await ethProvider.request({
+        method: 'wallet_revokePermissions',
+        params: [
+          {
+            eth_accounts: {}
+          }
+        ]
+      });
+    }
+    this.connected = false;
+    return true;
   }
 
   async signMessage(address: string, message: string): Promise<string> {
@@ -143,10 +201,8 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   }
 
   async sendTransaction(
-    _address: string,
-    transaction: TransactionRequestLike,
-    _providerConfig?: FuelProviderConfig,
-    signer?: string
+    address: string,
+    transaction: TransactionRequestLike
   ): Promise<string> {
     if (!(await this.isConnected())) {
       throw Error('No connected accounts');
@@ -166,14 +222,13 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
         this.predicate.abi
       )
     }));
-    const account = signer
-      ? accounts.find(({ predicateAccount }) => predicateAccount === signer)
-      : accounts[0];
 
+    const account = accounts.find(
+      ({ predicateAccount }) => predicateAccount === address
+    );
     if (!account) {
-      throw Error('Invalid account');
+      throw Error(`No account found for ${address}`);
     }
-
     const transactionRequest = transactionRequestify(transaction);
 
     // Create a predicate and set the witness index to call in predicate`
@@ -194,7 +249,7 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
       predicate.populateTransactionPredicateData(transactionRequest);
 
     const txID = hashTransaction(requestWithPredicateAttached, chainId);
-    const signature = await this.ethProvider.request({
+    const signature = await ethProvider.request({
       method: 'personal_sign',
       params: [txID, account.ethAccount]
     });
@@ -234,6 +289,8 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
       throw Error('No accounts found');
     }
 
+    // Eth Wallet (MetaMask at least) return the current select account as the first
+    // item in the accounts list.
     const fuelAccount = getPredicateAddress(
       ethAccounts[0]!,
       fuelProvider.getChainId(),

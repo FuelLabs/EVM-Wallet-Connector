@@ -47,3 +47,12 @@ button:active {
   width: 100%;
   text-align: center;
 }
+
+.accountActions {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  gap: 10px;
+  margin-top: 10px;
+  margin-bottom: 25px;
+}

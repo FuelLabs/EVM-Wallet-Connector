@@ -19,7 +19,7 @@ root.render(
       fuelConfig={{
         devMode: true,
         connectors: [
-          new FuelWalletDevelopmentConnector(),
+          // new FuelWalletDevelopmentConnector(),
           new EVMWalletConnectorRefactor()
         ]
       }}
