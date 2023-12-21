@@ -1,4 +1,5 @@
 import { FuelProvider } from '@fuel-wallet/react';
+import { FuelWalletDevelopmentConnector } from '@fuel-wallet/sdk';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { EVMWalletConnectorRefactor } from '@fuels/wallet-connector-evm';
@@ -18,6 +19,7 @@ root.render(
       fuelConfig={{
         devMode: true,
         connectors: [
+          new FuelWalletDevelopmentConnector(),
           new EVMWalletConnectorRefactor()
         ]
       }}
