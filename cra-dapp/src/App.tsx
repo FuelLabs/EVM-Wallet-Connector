@@ -15,7 +15,7 @@ import {
   BaseAssetId
 } from 'fuels';
 
-const DEFAULT_ADDRESS = Address.fromRandom().toString();
+const DEFAULT_ADDRESS = 'Enter Fuel address';
 
 function AccountItem({ address }: { address: string}) {
   const [isLoading, setLoading] = useState(false);
@@ -100,12 +100,10 @@ function App() {
   const { accounts } = useAccounts();
   const lightTheme = theme === 'light';
 
-  //
   useEffect(() => {
     const interval = setInterval(() => refetch(), 1000);
     return () => clearInterval(interval);
   }, [refetch]);
-  //
 
   return (
     <div className="App" data-theme={theme}>
