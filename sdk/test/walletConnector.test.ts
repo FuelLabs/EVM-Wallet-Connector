@@ -24,11 +24,8 @@ import {
 } from 'fuels';
 import { launchNodeAndGetWallets } from '@fuel-ts/wallet/test-utils';
 import { MockProvider } from './mockProvider';
-import {
-  EVMWalletConnector,
-  createPredicate,
-  getPredicateAddress
-} from '../src/index';
+import { testEVMWalletConnector as EVMWalletConnector } from './testConnector';
+import { createPredicate, getPredicateAddress } from '../src/index';
 import { predicates } from '../src/predicateResources';
 
 chai.use(chaiAsPromised);
@@ -338,12 +335,7 @@ describe('EVM Wallet Connector', () => {
       await connector.accounts();
 
       //  Send transaction using EvmWalletConnector
-      await connector.sendTransaction(
-        '',
-        transactionRequest,
-        undefined,
-        predicateAccount1
-      );
+      await connector.sendTransaction(predicateAccount1, transactionRequest);
 
       // Check balances are correct
       const predicateAltBalanceFinal = await predicate.getBalance(ALT_ASSET_ID);
@@ -432,12 +424,7 @@ describe('EVM Wallet Connector', () => {
       await connector.accounts();
 
       // Send transaction using EvmWalletConnector
-      await connector.sendTransaction(
-        '',
-        transactionRequest,
-        undefined,
-        predicateAccount2
-      );
+      await connector.sendTransaction(predicateAccount2, transactionRequest);
 
       // Check balances are correct
       const predicateAltBalanceFinal = await predicate.getBalance(ALT_ASSET_ID);
@@ -525,10 +512,8 @@ describe('EVM Wallet Connector', () => {
 
       await expect(
         connector.sendTransaction(
-          '',
-          transactionRequest,
-          undefined,
-          predicateAccount2.replaceAll('h', 'X')
+          predicateAccount2.replaceAll('h', 'X'),
+          transactionRequest
         )
       ).to.be.rejectedWith('Invalid account');
     });
@@ -558,62 +543,6 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-  describe('getWallet()', () => {
-    it('returns a predicate wallet', async () => {
-      await connector.connect();
-      let wallet = await connector.getWallet(predicateAccount1);
-
-      const options: ProviderOptions & {
-        walletConnection: FuelWalletConnector;
-      } = {
-        walletConnection: new FuelWalletConnector('EVM-Wallet-Connector')
-      };
-
-      const walletProvider = await FuelWalletProvider.create(
-        fuelProvider.url,
-        options
-      );
-
-      let expectedWallet = new FuelWalletLocked(
-        predicateAccount1,
-        connector,
-        walletProvider
-      );
-
-      expect(wallet.address).to.deep.equal(expectedWallet.address);
-      expect(wallet.provider.url).to.equal(expectedWallet.provider.url);
-    });
-
-    it('throws error for invalid address', async () => {
-      await expect(connector.getWallet('0x123')).to.be.rejectedWith(
-        'Invalid account'
-      );
-    });
-  });
-
-  describe('getProvider()', () => {
-    it('returns the fuel provider', async () => {
-      const options: ProviderOptions & {
-        walletConnection: FuelWalletConnector;
-      } = {
-        walletConnection: new FuelWalletConnector('EVM-Wallet-Connector')
-      };
-
-      const walletProvider = await FuelWalletProvider.create(
-        fuelProvider.url,
-        options
-      );
-
-      let connectorProvider = await connector.getProvider();
-
-      expect(connectorProvider.url).to.be.equal(walletProvider.url);
-      // TODO: work out how to test
-      // expect(connectorProvider.options).to.deep.equal(
-      //   walletProvider.options
-      // );
-    });
-  });
-
   describe('addAbi()', () => {
     it('returns false', async () => {
       expect(await connector.addAbi({})).to.be.false;
@@ -636,7 +565,7 @@ describe('EVM Wallet Connector', () => {
 
   describe('network()', () => {
     it('returns the fuel network info', async () => {
-      let network = await connector.network();
+      let network = await connector.currentNetwork();
 
       expect(network.chainId.toString()).to.be.equal(
         (await fuelProvider.getNetwork()).chainId.toString()
