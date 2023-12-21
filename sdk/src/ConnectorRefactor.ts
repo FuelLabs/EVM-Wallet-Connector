@@ -1,6 +1,4 @@
-import {
-  FuelProviderConfig
-} from '@fuel-wallet/types';
+import { FuelProviderConfig, Asset, AbiMap } from '@fuel-wallet/types';
 import {
   Provider,
   transactionRequestify,
@@ -11,12 +9,7 @@ import {
   hashTransaction,
   InputValue
 } from 'fuels';
-import {
-  FuelConnector,
-  Network,
-  ConnectorMetadata,
-  Version
-} from '@fuel-wallet/sdk';
+import { FuelConnector, Network, Version } from '@fuel-wallet/sdk';
 import {
   BytesLike,
   hexlify,
@@ -30,23 +23,11 @@ import { getPredicateRoot } from './getPredicateRoot';
 import { predicates } from './predicateResources';
 
 export class EVMWalletConnectorRefactor extends FuelConnector {
-  //TODO better solution to handling 'not definitely initialised'
   // @ts-expect-error
   ethProvider: EIP1193Provider;
   // @ts-expect-error
   fuelProvider: Provider;
   private predicate: { abi: any; bytecode: Uint8Array };
-  // readonly client: JSONRPCClient;
-
-  metadata: ConnectorMetadata = {
-    image: '/connectors/fuel-wallet.svg',
-    install: {
-      action: 'Install',
-      description:
-        'To connect your Fuel Wallet, install the browser extension.',
-      link: 'https://chrome.google.com/webstore/detail/fuel-wallet/dldjpboieedgcmpkchcjcbijingjcgok'
-    }
-  };
 
   constructor() {
     super();
@@ -60,6 +41,7 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
    * Application communication methods
    * ============================================================
    */
+
   private async getProviders() {
     if (this.fuelProvider && this.ethProvider) {
       return {
@@ -100,21 +82,19 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   async isConnected(): Promise<boolean> {
     try {
       const accounts = await this.accounts();
-      console.log('isConnected called', accounts);
       return accounts.length > 0;
     } catch (error) {
-      console.log(error);
       throw error;
     }
   }
 
   async ping(): Promise<boolean> {
     await this.getProviders();
-    console.log('ping pong');
     return true;
   }
 
   async version(): Promise<Version> {
+    // TODO: set actual version?
     const ver: Version = {
       app: '0.0.0',
       network: '0.0.0'
@@ -123,11 +103,15 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   }
 
   async connect(): Promise<boolean> {
-    // Q: How does this ensure connection?
     const { ethProvider } = await this.getProviders();
     await ethProvider.request({ method: 'eth_requestAccounts' });
     this.connected = true;
     return true;
+  }
+
+  async disconnect(): Promise<boolean> {
+    // TODO: actually disconnect via event: ethereum.on('disconnect', handler: (error: ProviderRpcError) => void);
+    return false;
   }
 
   async accounts(): Promise<Array<string>> {
@@ -136,14 +120,9 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
     const ethAccounts: Array<string> = await ethProvider.request({
       method: 'eth_accounts'
     });
-    //
-    console.log('ethAccounts', ethAccounts);
-    //
 
     const chainId = fuelProvider.getChainId();
-    //
-    console.log('chainId', chainId);
-    //
+
     const accounts = ethAccounts.map((account) =>
       getPredicateAddress(
         account,
@@ -178,6 +157,10 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
     );
 
     return fuelAccount;
+  }
+
+  async signMessage(address: string, message: string): Promise<string> {
+    throw new Error('A predicate account cannot sign messages');
   }
 
   async sendTransaction(
@@ -258,6 +241,35 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
     return response.submit.id;
   }
 
+  async assets(): Promise<Array<Asset>> {
+    // TODO: can get assets at a predicates address? emit warning/throw error if not?
+    return [];
+  }
+
+  async addAsset(asset: Asset): Promise<boolean> {
+    console.warn('A predicate account cannot add an asset');
+    return false;
+  }
+
+  async addAssets(assets: Asset[]): Promise<boolean> {
+    console.warn('A predicate account cannot add assets');
+    return false;
+  }
+
+  async addAbi(abiMap: AbiMap): Promise<boolean> {
+    console.warn('Cannot add an ABI to a predicate account');
+    return false;
+  }
+
+  async getAbi(contractId: string): Promise<JsonAbi> {
+    throw Error('Cannot get contractId ABI for a predicate');
+  }
+
+  async hasAbi(contractId: string): Promise<boolean> {
+    console.warn('A predicate account cannot have an ABI');
+    return false;
+  }
+
   async currentNetwork(): Promise<Network> {
     const { fuelProvider } = await this.getProviders();
     const chainId = fuelProvider.getChainId();
@@ -266,6 +278,17 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
 
   async networks(): Promise<Network[]> {
     return [await this.currentNetwork()];
+  }
+
+  async addNetwork(networkUrl: string): Promise<boolean> {
+    console.warn('Cannot add a network');
+    return false;
+  }
+
+  async selectNetwork(_network: Network): Promise<boolean> {
+    // TODO: actually allow selecting networks once mainnet is released?
+    console.warn('Cannot select a network');
+    return false;
   }
 }
 
