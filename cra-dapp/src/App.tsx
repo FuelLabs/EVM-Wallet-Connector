@@ -6,7 +6,6 @@ import {
   useConnectUI,
   useWallet,
   useBalance,
-  useProvider,
   useIsConnected, useFuel, useConnectors
 } from '@fuel-wallet/react';
 import './App.css';
@@ -24,7 +23,7 @@ function AccountItem({ address }: { address: string}) {
     address,
   });
   const { wallet } = useWallet(address);
-  const hasBalance = balance && balance.gte(0.1);
+  const hasBalance = balance && balance.gte(bn.parseUnits('0.1'));
 
   // Pool balance every 2 seconds
   useEffect(() => {
@@ -96,7 +95,6 @@ function LogEvents() {
 function App() {
   const { connect, error, isError, theme, setTheme, isConnecting } =
     useConnectUI();
-  const { provider } = useProvider();
   const { disconnect } = useDisconnect();
   const { isConnected, refetch } = useIsConnected();
   const { accounts } = useAccounts();

@@ -39,14 +39,14 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   private setupLock: boolean = false;
   private _currentAccount: string | null = null;
 
-  // metadata is needed, but the current is a placeholder
+  // metadata placeholder
   metadata: ConnectorMetadata = {
-    image: '/connectors/fuel-wallet.svg',
+    image: '',
     install: {
       action: 'Install',
       description:
-        'To connect your Fuel Wallet, install the browser extension.',
-      link: 'https://chrome.google.com/webstore/detail/fuel-wallet/dldjpboieedgcmpkchcjcbijingjcgok'
+        'An EVM wallet is required.',
+      link: ''
     }
   };
 
@@ -94,7 +94,6 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
   }
 
   async setupEventBridge() {
-    console.log('setupEventBridge');
     const { ethProvider } = await this.getProviders();
     ethProvider.on('accountsChanged', async (accounts) => {
       this.emit('accounts', await this.accounts());
@@ -103,23 +102,17 @@ export class EVMWalletConnectorRefactor extends FuelConnector {
       }
     });
     ethProvider.on('connect', async (arg) => {
-      console.log('connect', arg);
       this.emit('connection', await this.isConnected());
     });
     ethProvider.on('disconnect', async (arg) => {
-      console.log('disconnect', arg);
       this.emit('connection', await this.isConnected());
     });
   }
 
   async setupCurrentAccount() {
-    try {
       const [currentAccount = null] = await this.accounts();
       this._currentAccount = currentAccount;
       this.emit('currentAccount', currentAccount);
-    } catch (err) {
-      console.log('setupCurrentAccount', err);
-    }
   }
 
   /**
