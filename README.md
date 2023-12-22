@@ -34,10 +34,3 @@ pnpm install
 cd sdk
 pnpm test
 ```
-
-# Todo
-
-- Implement listener for events such as changing accounts
-- When `FuelWalletConnection` is not constrained to the use of `window.ethereum` extend the connector with the connection
-- Add infrastructure (CI) to check code formatting and run tests upon pull requests
-- Implement into dApp for live integration / demonstration
