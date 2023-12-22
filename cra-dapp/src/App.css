@@ -2,9 +2,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 100px;
+  padding: 100px;
   height: 100vh;
   width: 100vw;
+  text-align: center;
 }
 
 .App[data-theme='dark'] {
@@ -33,13 +34,10 @@ button:active {
   gap: 10px;
 }
 
-.Accounts {
-  margin-top: 20px;
-  text-align: center;
-}
-
 .Accounts > div {
   font-style: italic;
+  border-radius: 4px;
+  padding: 10px 10px;
 }
 
 .Error {
@@ -54,5 +52,13 @@ button:active {
   justify-content: end;
   gap: 10px;
   margin-top: 10px;
-  margin-bottom: 25px;
+  margin-bottom: 10px;
+}
+
+.Info {
+  padding: 30px 100px;
+}
+
+.Counter {
+ padding-top: 20px;
 }

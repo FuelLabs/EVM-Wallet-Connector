@@ -87,11 +87,11 @@ function AccountItem({ address, setCounter }: { address: string; setCounter: Rea
             </button>
           </a>
         )}
+        <button onClick={() => increment()} disabled={isLoading || !hasBalance}>
+          {isLoading ? 'Incrementing...' : 'Increment the counter on a contract'}
+        </button>
         <button onClick={() => handleTransfer()} disabled={isLoading || !hasBalance}>
           {isLoading ? 'Transferring...' : 'Transfer 0.1 ETH'}
-        </button>
-        <button onClick={() => increment()} disabled={isLoading || !hasBalance}>
-          {isLoading ? 'Incrementing...' : 'Increment the counter'}
         </button>
       </div>
     </div>
@@ -154,6 +154,21 @@ function App() {
           {lightTheme ? '🌙' : '☀️'}
         </button>
       </div>
+      <div className='Info'>
+        {isConnected && (
+          <>
+            <p>
+              The connected accounts below are the predicate accounts on Fuel for each of the connected EVM wallet accounts.
+            </p>
+            <p>
+              You can use an EVM wallet account to send transactions from its corresponding predicate account.
+            </p>
+            <p>
+              Additional accounts can be connected via the EVM wallet extension.
+            </p>
+          </>
+        )}
+      </div>
       {isError && <p className="Error">{error?.message}</p>}
       {isConnected && (
         <div className="Accounts">
@@ -167,11 +182,23 @@ function App() {
           ))}
         </div>
       )}
-      <div>
+      <div className='Counter'>
         {isConnected && (
           <h3>
             {counter === 0 ? 'Increment to see the counter!' : `Counter: ${counter}`}
           </h3>
+        )}
+      </div>
+      <div className='BottomInfo'>
+        {isConnected && (
+          <>
+            <p>
+              The counter contract is deployed to the address below:
+            </p>
+            <p>
+            0x32b066d8139d1c3bdde35c73925c2031802831cdb2feb8b283dbe3c49355e762.
+            </p>
+          </>
         )}
       </div>
     </div>
