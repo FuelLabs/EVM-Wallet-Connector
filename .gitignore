@@ -3,12 +3,14 @@ target
 out
 */*.lock
 
+## Misc
+.DS_Store
+vite.config.js.timestamp-*.mjs
+
 # sdk
 node_modules
 cache
-pnpm-lock.yaml
 dist
-sdk/src/predicateResources.ts
 
 # tmp
 .github

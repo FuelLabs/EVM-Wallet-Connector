@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "pnpm install",
   "buildCommand": "pnpm build",
-  "outputDirectory": "./examples/cra-dapp/build",
+  "outputDirectory": "examples/cra-dapp/build",
   "trailingSlash": true
 }
