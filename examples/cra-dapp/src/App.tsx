@@ -19,7 +19,7 @@ import {
 
 const COUNTER_CONTRACT_ID =
   "0x32b066d8139d1c3bdde35c73925c2031802831cdb2feb8b283dbe3c49355e762";
-const DEFAULT_ADDRESS = 'Enter Fuel address';
+const DEFAULT_ADDRESS = Address.fromRandom().toString();
 
 function AccountItem({ address, setCounter }: { address: string; setCounter: React.Dispatch<React.SetStateAction<number>>}) {
   const [isLoading, setLoading] = useState(false);

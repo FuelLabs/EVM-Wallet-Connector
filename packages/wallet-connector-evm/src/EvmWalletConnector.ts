@@ -151,24 +151,8 @@ export class EVMWalletConnector extends FuelConnector {
   }
 
   async accounts(): Promise<Array<string>> {
-    // Get the ethereum accounts
-    const { ethProvider, fuelProvider } = await this.getProviders();
-    const ethAccounts: Array<string> = await ethProvider.request({
-      method: 'eth_accounts'
-    });
-
-    const chainId = fuelProvider.getChainId();
-
-    const accounts = ethAccounts.map((account) =>
-      getPredicateAddress(
-        account,
-        chainId,
-        this.predicate.bytecode,
-        this.predicate.abi
-      )
-    );
-
-    return accounts;
+    const accounts = await this.getPredicateAccounts();
+    return accounts.map((account) => account.predicateAccount);
   }
 
   async connect(): Promise<boolean> {
@@ -214,25 +198,9 @@ export class EVMWalletConnector extends FuelConnector {
     if (!(await this.isConnected())) {
       throw Error('No connected accounts');
     }
-
     const { ethProvider, fuelProvider } = await this.getProviders();
-    const ethAccounts: Array<string> = await ethProvider.request({
-      method: 'eth_accounts'
-    });
     const chainId = fuelProvider.getChainId();
-    const accounts = ethAccounts.map((account) => ({
-      ethAccount: account,
-      predicateAccount: getPredicateAddress(
-        account,
-        chainId,
-        this.predicate.bytecode,
-        this.predicate.abi
-      )
-    }));
-
-    const account = accounts.find(
-      ({ predicateAccount }) => predicateAccount === address
-    );
+    const account = await this.getPredicateFromAddress(address);
     if (!account) {
       throw Error(`No account found for ${address}`);
     }
@@ -356,6 +324,32 @@ export class EVMWalletConnector extends FuelConnector {
   async hasAbi(contractId: string): Promise<boolean> {
     console.warn('A predicate account cannot have an ABI');
     return false;
+  }
+
+  private async getPredicateFromAddress(address: string) {
+    const accounts = await this.getPredicateAccounts();
+    return accounts.find((account) => account.predicateAccount === address);
+  }
+
+  private async getPredicateAccounts(): Promise<Array<{
+    ethAccount: string;
+    predicateAccount: string;
+  }>> {
+    const { ethProvider, fuelProvider } = await this.getProviders();
+    const ethAccounts: Array<string> = await ethProvider.request({
+      method: 'eth_accounts'
+    });
+    const chainId = fuelProvider.getChainId();
+    const accounts = ethAccounts.map((account) => ({
+      ethAccount: account,
+      predicateAccount: getPredicateAddress(
+        account,
+        chainId,
+        this.predicate.bytecode,
+        this.predicate.abi
+      )
+    }));
+    return accounts;
   }
 }
 
