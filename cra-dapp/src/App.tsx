@@ -23,12 +23,16 @@ const DEFAULT_ADDRESS = 'Enter Fuel address';
 
 function AccountItem({ address, setCounter }: { address: string; setCounter: React.Dispatch<React.SetStateAction<number>>}) {
   const [isLoading, setLoading] = useState(false);
-  const { balance } = useBalance({
+  const { balance, refetch } = useBalance({
     address,
   });
   const { wallet } = useWallet(address);
-
   const hasBalance = balance && balance.gte(bn.parseUnits('0.1'));
+
+  useEffect(() => {
+    const interval = setInterval(() => refetch(), 2000);
+    return () => clearInterval(interval);
+  }, [refetch]);
 
   async function handleTransfer() {
     setLoading(true);
@@ -164,7 +168,11 @@ function App() {
         </div>
       )}
       <div>
-      {isConnected && (<h3>Counter: {counter}</h3>)}
+        {isConnected && (
+          <h3>
+            {counter === 0 ? 'Increment to see the counter!' : `Counter: ${counter}`}
+          </h3>
+        )}
       </div>
     </div>
   );
