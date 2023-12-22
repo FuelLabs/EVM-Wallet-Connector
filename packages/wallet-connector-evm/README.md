@@ -21,14 +21,14 @@ import { Fuel, defaultConnectors } from '@fuel-wallet/sdk';
 import { EVMWalletConnector } from '@fuels/wallet-connector-evm';
 
 const fuel = new Fuel({
-    connectors: [
-        // Also show other connectors like Fuel Wallet
-        ...defaultConnectors(),
-        new EVMWalletConnector()
-    ]
+  connectors: [
+    // Also show other connectors like Fuel Wallet
+    ...defaultConnectors(),
+    new EVMWalletConnector()
+  ]
 });
 
-await fuel.selectConnector('EVM wallet connector')
+await fuel.selectConnector('EVM wallet connector');
 const connection = await fuel.connect();
 console.log(connection);
 ```
