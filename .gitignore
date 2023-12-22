@@ -1,0 +1,17 @@
+# predicate
+target
+out
+*/*.lock
+
+# sdk
+node_modules
+cache
+pnpm-lock.yaml
+dist
+sdk/src/predicateResources.ts
+
+# tmp
+.github
+
+# counter contract
+counter
