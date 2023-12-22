@@ -12,3 +12,6 @@ sdk/src/predicateResources.ts
 
 # tmp
 .github
+
+# counter contract
+counter

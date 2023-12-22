@@ -6,32 +6,31 @@ import {
   useConnectUI,
   useWallet,
   useBalance,
-  useIsConnected, useFuel, useConnectors
+  useIsConnected,
+  useFuel
 } from '@fuel-wallet/react';
 import './App.css';
+import { CounterAbi__factory } from "./contracts";
 import {
   bn,
   Address,
-  BaseAssetId
+  BaseAssetId,
 } from 'fuels';
 
+const COUNTER_CONTRACT_ID =
+  "0x32b066d8139d1c3bdde35c73925c2031802831cdb2feb8b283dbe3c49355e762";
 const DEFAULT_ADDRESS = 'Enter Fuel address';
 
-function AccountItem({ address }: { address: string}) {
+function AccountItem({ address, setCounter }: { address: string; setCounter: React.Dispatch<React.SetStateAction<number>>}) {
   const [isLoading, setLoading] = useState(false);
-  const { balance, refetch } = useBalance({
+  const { balance } = useBalance({
     address,
   });
   const { wallet } = useWallet(address);
+
   const hasBalance = balance && balance.gte(bn.parseUnits('0.1'));
 
-  // Pool balance every 2 seconds
-  useEffect(() => {
-    const interval = setInterval(() => refetch(), 1000);
-    return () => clearInterval(interval);
-  }, [refetch]);
-
-  async function handleTransfer(account: string) {
+  async function handleTransfer() {
     setLoading(true);
     try {
       const amount = bn.parseUnits('0.1');
@@ -50,6 +49,29 @@ function AccountItem({ address }: { address: string}) {
     }
   }
 
+  async function getCount() {
+    if (wallet) {
+      const contract = CounterAbi__factory.connect(COUNTER_CONTRACT_ID, wallet!);
+      const { value } = await contract.functions.count().simulate();
+      setCounter(value.toNumber());
+    }
+  }
+ 
+  async function increment() {
+    if (wallet) {
+      setLoading(true);
+      const contract = CounterAbi__factory.connect(COUNTER_CONTRACT_ID, wallet);
+      try {
+        await contract.functions.increment().txParams({ gasPrice: 1 }).call();
+        getCount();
+      } catch (err) {
+        console.log("error sending transaction...", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+  }
+
   return (
     <div>
       <b>Account:</b> {address} | <b>Balance:</b> {balance?.format() || '0'} ETH
@@ -61,8 +83,11 @@ function AccountItem({ address }: { address: string}) {
             </button>
           </a>
         )}
-        <button onClick={() => handleTransfer(address)} disabled={isLoading || !hasBalance}>
+        <button onClick={() => handleTransfer()} disabled={isLoading || !hasBalance}>
           {isLoading ? 'Transferring...' : 'Transfer 0.1 ETH'}
+        </button>
+        <button onClick={() => increment()} disabled={isLoading || !hasBalance}>
+          {isLoading ? 'Incrementing...' : 'Increment the counter'}
         </button>
       </div>
     </div>
@@ -98,6 +123,7 @@ function App() {
   const { disconnect } = useDisconnect();
   const { isConnected, refetch } = useIsConnected();
   const { accounts } = useAccounts();
+  const [counter, setCounter] = useState<number>(0);
   const lightTheme = theme === 'light';
 
   useEffect(() => {
@@ -132,10 +158,14 @@ function App() {
             <AccountItem
               key={account}
               address={account}
+              setCounter={setCounter}
             />
           ))}
         </div>
       )}
+      <div>
+      {isConnected && (<h3>Counter: {counter}</h3>)}
+      </div>
     </div>
   );
 }
