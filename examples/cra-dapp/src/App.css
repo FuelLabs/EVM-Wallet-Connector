@@ -1,9 +1,14 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+
 .App {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 100px;
-  height: 100vh;
+  padding-top: 50px;
+  box-sizing: border-box;
   width: 100vw;
   text-align: center;
 }
