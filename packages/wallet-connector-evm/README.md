@@ -17,7 +17,7 @@ to sign transactions on Fuel Network.
 
 The Connector follows the new standard for Fuel compatible [Wallet Connectors](https://github.com/FuelLabs/fuels-wallet/wiki/Fuel-Wallet-Connectors), creating a more integrated ecosystem.
 
-To allow user to use a MetaMask wallet on Fuel we use a [Predicates]() on Fuel Network, that allow transactions to be validated using a script.
+To enable the use of a MetaMask wallet on Fuel we use [Predicates]() on Fuel Network, that allow transactions to be validated using a script.
 
 Bellow we share a model that explains how our EVM Connector works.
 
@@ -31,7 +31,7 @@ sequenceDiagram
     A->>B: fuel.accounts()
     B->>C: ethProvider.request({ "method": "eth_accounts" })
     C-->>B: ["0xa202E75a467726Ad49F76e8914c42433c1Ad821F"]
-    B->>B: Create a predicate for each ETH account address 
+    B->>B: Create a predicate for each ETH account address
     B-->>A: ['fuel1s6cswzjfunkarjh9rlr7fdug4r04le2zec9agtudj3gkjwarlwnsw8859m']
 
     note over A,C: Send Transaction
@@ -58,14 +58,14 @@ import { Fuel, defaultConnectors } from '@fuel-wallet/sdk';
 import { EVMWalletConnector } from '@fuels/wallet-connector-evm';
 
 const fuel = new Fuel({
-    connectors: [
-        // Also show other connectors like Fuel Wallet
-        ...defaultConnectors(),
-        new EVMWalletConnector()
-    ]
+  connectors: [
+    // Also show other connectors like Fuel Wallet
+    ...defaultConnectors(),
+    new EVMWalletConnector()
+  ]
 });
 
-await fuel.selectConnector('EVM wallet connector')
+await fuel.selectConnector('EVM wallet connector');
 const connection = await fuel.connect();
 console.log(connection);
 ```
