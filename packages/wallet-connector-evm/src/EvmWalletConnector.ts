@@ -50,8 +50,8 @@ export class EVMWalletConnector extends FuelConnector {
     image: METAMASK_ICON,
     install: {
       action: 'Install',
-      description: 'An EVM wallet is required.',
-      link: ''
+      description: 'Install a ethereum Wallet to connect to Fuel',
+      link: 'https://ethereum.org/en/wallets/find-wallet/'
     }
   };
 
