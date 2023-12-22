@@ -11,6 +11,6 @@ export class testEVMWalletConnector extends EVMWalletConnector {
   }
 
   async getProviders() {
-    return { fuelProvider: this.fuelProvider, ethProvider: this.ethProvider };
+    return { fuelProvider: this.fuelProvider!, ethProvider: this.ethProvider! };
   }
 }

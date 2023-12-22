@@ -9,11 +9,6 @@ const __dirname = path.dirname(__filename);
 
 import type { Asset } from '@fuel-wallet/types';
 import {
-  FuelWalletConnector,
-  FuelWalletLocked,
-  FuelWalletProvider
-} from '@fuel-wallet/sdk';
-import {
   bn,
   Wallet,
   BaseAssetId,
@@ -24,8 +19,7 @@ import {
 } from 'fuels';
 import { launchNodeAndGetWallets } from '@fuel-ts/wallet/test-utils';
 import { MockProvider } from './mockProvider';
-import { testEVMWalletConnector as EVMWalletConnector } from './testConnector';
-import { createPredicate, getPredicateAddress } from '../src/index';
+import { EVMWalletConnector, createPredicate, getPredicateAddress } from '../src/index';
 import { predicates } from '../src/predicateResources';
 
 chai.use(chaiAsPromised);
@@ -90,7 +84,10 @@ describe('EVM Wallet Connector', () => {
     predicateAccount2 = predicateAccounts[1]!;
 
     // Class contains state, reset the state for each test
-    connector = new EVMWalletConnector(ethProvider, fuelProvider);
+    connector = new EVMWalletConnector({
+      ethProvider,
+      fuelProvider,
+    });
   });
 
   afterEach(() => {
@@ -580,7 +577,7 @@ describe('EVM Wallet Connector', () => {
       let network = networks.pop();
 
       expect(network!.chainId.toString()).to.be.equal(
-        (await connector.fuelProvider.getNetwork()).chainId.toString()
+        (await connector.fuelProvider!.getNetwork()).chainId.toString()
       );
       expect(network!.url).to.be.equal(fuelProvider.url);
     });

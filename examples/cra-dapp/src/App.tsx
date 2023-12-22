@@ -19,15 +19,17 @@ import {
 
 const COUNTER_CONTRACT_ID =
   "0x32b066d8139d1c3bdde35c73925c2031802831cdb2feb8b283dbe3c49355e762";
-const DEFAULT_ADDRESS = 'Enter Fuel address';
+const DEFAULT_ADDRESS = Address.fromRandom().toString();
+const DEFAULT_AMOUNT = bn.parseUnits('0.001');
 
 function AccountItem({ address, setCounter }: { address: string; setCounter: React.Dispatch<React.SetStateAction<number>>}) {
   const [isLoading, setLoading] = useState(false);
+  const [isLoadingCall, setLoadingCall] = useState(false);
   const { balance, refetch } = useBalance({
     address,
   });
   const { wallet } = useWallet(address);
-  const hasBalance = balance && balance.gte(bn.parseUnits('0.1'));
+  const hasBalance = balance && balance.gte(DEFAULT_AMOUNT);
 
   useEffect(() => {
     const interval = setInterval(() => refetch(), 2000);
@@ -37,10 +39,9 @@ function AccountItem({ address, setCounter }: { address: string; setCounter: Rea
   async function handleTransfer() {
     setLoading(true);
     try {
-      const amount = bn.parseUnits('0.1');
       const receiverAddress = prompt('Receiver address', DEFAULT_ADDRESS);
       const receiver = Address.fromString(receiverAddress || DEFAULT_ADDRESS);    
-      const resp = await wallet?.transfer(receiver, amount, BaseAssetId, {
+      const resp = await wallet?.transfer(receiver, DEFAULT_AMOUNT, BaseAssetId, {
         gasPrice: 1,
         gasLimit: 10_000,
       });
@@ -63,7 +64,7 @@ function AccountItem({ address, setCounter }: { address: string; setCounter: Rea
  
   async function increment() {
     if (wallet) {
-      setLoading(true);
+      setLoadingCall(true);
       const contract = CounterAbi__factory.connect(COUNTER_CONTRACT_ID, wallet);
       try {
         await contract.functions.increment().txParams({ gasPrice: 1 }).call();
@@ -71,7 +72,7 @@ function AccountItem({ address, setCounter }: { address: string; setCounter: Rea
       } catch (err) {
         console.log("error sending transaction...", err);
       } finally {
-        setLoading(false);
+        setLoadingCall(false);
       }
     }
   }
@@ -87,11 +88,11 @@ function AccountItem({ address, setCounter }: { address: string; setCounter: Rea
             </button>
           </a>
         )}
-        <button onClick={() => increment()} disabled={isLoading || !hasBalance}>
-          {isLoading ? 'Incrementing...' : 'Increment the counter on a contract'}
+        <button onClick={() => increment()} disabled={isLoadingCall || !hasBalance}>
+          {isLoadingCall ? 'Incrementing...' : 'Increment the counter on a contract'}
         </button>
         <button onClick={() => handleTransfer()} disabled={isLoading || !hasBalance}>
-          {isLoading ? 'Transferring...' : 'Transfer 0.1 ETH'}
+          {isLoading ? 'Transferring...' : `Transfer ${DEFAULT_AMOUNT.format()} ETH`}
         </button>
       </div>
     </div>

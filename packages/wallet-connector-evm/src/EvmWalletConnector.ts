@@ -29,19 +29,25 @@ import {
 import { EIP1193Provider } from './eip-1193';
 import { getPredicateRoot } from './getPredicateRoot';
 import { predicates } from './predicateResources';
+import { METAMASK_ICON } from './metamask-icon';
+
+
+type EVMWalletConnectorConfig = {
+  fuelProvider?: Provider | string;
+  ethProvider?: EIP1193Provider;
+}
 
 export class EVMWalletConnector extends FuelConnector {
-  // @ts-expect-error
-  ethProvider: EIP1193Provider;
-  // @ts-expect-error
-  fuelProvider: Provider;
+  ethProvider: EIP1193Provider | null = null;
+  fuelProvider: Provider | null = null;
   private predicate: { abi: any; bytecode: Uint8Array };
   private setupLock: boolean = false;
   private _currentAccount: string | null = null;
+  private config: Required<EVMWalletConnectorConfig>;
 
   // metadata placeholder
   metadata: ConnectorMetadata = {
-    image: '',
+    image: METAMASK_ICON,
     install: {
       action: 'Install',
       description: 'An EVM wallet is required.',
@@ -49,11 +55,15 @@ export class EVMWalletConnector extends FuelConnector {
     }
   };
 
-  constructor() {
+  constructor(config: EVMWalletConnectorConfig = {}) {
     super();
     this.name = 'EVM wallet connector';
     this.predicate = predicates['verification-predicate'];
     this.installed = true;
+    this.config = Object.assign(config, {
+      fuelProvider: 'https://beta-4.fuel.network/graphql',
+      ethProvider: (window as any).ethereum
+    });
   }
 
   /**
@@ -65,15 +75,20 @@ export class EVMWalletConnector extends FuelConnector {
   async getProviders() {
     if (!this.fuelProvider || !this.ethProvider) {
       if (typeof window !== 'undefined') {
-        // @ts-expect-error
-        this.ethProvider = window.ethereum;
+        
+        this.ethProvider = this.config.ethProvider;
         if (!this.ethProvider) {
           throw new Error('Ethereum provider not found');
         }
 
-        this.fuelProvider = await Provider.create(
-          'https://beta-4.fuel.network/graphql'
-        );
+        if (typeof this.config.fuelProvider === 'string') {
+          this.fuelProvider = await Provider.create(
+            this.config.fuelProvider
+          );
+        } else {
+          this.fuelProvider = this.config.fuelProvider;
+        }
+
         if (!this.fuelProvider) {
           throw new Error('Fuel provider not found');
         }
@@ -136,24 +151,8 @@ export class EVMWalletConnector extends FuelConnector {
   }
 
   async accounts(): Promise<Array<string>> {
-    // Get the ethereum accounts
-    const { ethProvider, fuelProvider } = await this.getProviders();
-    const ethAccounts: Array<string> = await ethProvider.request({
-      method: 'eth_accounts'
-    });
-
-    const chainId = fuelProvider.getChainId();
-
-    const accounts = ethAccounts.map((account) =>
-      getPredicateAddress(
-        account,
-        chainId,
-        this.predicate.bytecode,
-        this.predicate.abi
-      )
-    );
-
-    return accounts;
+    const accounts = await this.getPredicateAccounts();
+    return accounts.map((account) => account.predicateAccount);
   }
 
   async connect(): Promise<boolean> {
@@ -199,25 +198,9 @@ export class EVMWalletConnector extends FuelConnector {
     if (!(await this.isConnected())) {
       throw Error('No connected accounts');
     }
-
     const { ethProvider, fuelProvider } = await this.getProviders();
-    const ethAccounts: Array<string> = await ethProvider.request({
-      method: 'eth_accounts'
-    });
     const chainId = fuelProvider.getChainId();
-    const accounts = ethAccounts.map((account) => ({
-      ethAccount: account,
-      predicateAccount: getPredicateAddress(
-        account,
-        chainId,
-        this.predicate.bytecode,
-        this.predicate.abi
-      )
-    }));
-
-    const account = accounts.find(
-      ({ predicateAccount }) => predicateAccount === address
-    );
+    const account = await this.getPredicateFromAddress(address);
     if (!account) {
       throw Error(`No account found for ${address}`);
     }
@@ -341,6 +324,32 @@ export class EVMWalletConnector extends FuelConnector {
   async hasAbi(contractId: string): Promise<boolean> {
     console.warn('A predicate account cannot have an ABI');
     return false;
+  }
+
+  private async getPredicateFromAddress(address: string) {
+    const accounts = await this.getPredicateAccounts();
+    return accounts.find((account) => account.predicateAccount === address);
+  }
+
+  private async getPredicateAccounts(): Promise<Array<{
+    ethAccount: string;
+    predicateAccount: string;
+  }>> {
+    const { ethProvider, fuelProvider } = await this.getProviders();
+    const ethAccounts: Array<string> = await ethProvider.request({
+      method: 'eth_accounts'
+    });
+    const chainId = fuelProvider.getChainId();
+    const accounts = ethAccounts.map((account) => ({
+      ethAccount: account,
+      predicateAccount: getPredicateAddress(
+        account,
+        chainId,
+        this.predicate.bytecode,
+        this.predicate.abi
+      )
+    }));
+    return accounts;
   }
 }
 

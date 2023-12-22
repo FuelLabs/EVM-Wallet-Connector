@@ -15,3 +15,4 @@ sdk/src/predicateResources.ts
 
 # counter contract
 counter
+.turbo
