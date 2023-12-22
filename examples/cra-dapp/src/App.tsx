@@ -7,7 +7,8 @@ import {
   useWallet,
   useBalance,
   useIsConnected,
-  useFuel
+  useFuel,
+  useProvider
 } from '@fuel-wallet/react';
 import './App.css';
 import { CounterAbi__factory } from "./contracts";
@@ -22,7 +23,7 @@ const COUNTER_CONTRACT_ID =
 const DEFAULT_ADDRESS = Address.fromRandom().toString();
 const DEFAULT_AMOUNT = bn.parseUnits('0.001');
 
-function AccountItem({ address, setCounter }: { address: string; setCounter: React.Dispatch<React.SetStateAction<number>>}) {
+function AccountItem({ address }: { address: string; }) {
   const [isLoading, setLoading] = useState(false);
   const [isLoadingCall, setLoadingCall] = useState(false);
   const { balance, refetch } = useBalance({
@@ -32,7 +33,7 @@ function AccountItem({ address, setCounter }: { address: string; setCounter: Rea
   const hasBalance = balance && balance.gte(DEFAULT_AMOUNT);
 
   useEffect(() => {
-    const interval = setInterval(() => refetch(), 2000);
+    const interval = setInterval(() => refetch(), 5000);
     return () => clearInterval(interval);
   }, [refetch]);
 
@@ -54,13 +55,7 @@ function AccountItem({ address, setCounter }: { address: string; setCounter: Rea
     }
   }
 
-  async function getCount() {
-    if (wallet) {
-      const contract = CounterAbi__factory.connect(COUNTER_CONTRACT_ID, wallet!);
-      const { value } = await contract.functions.count().simulate();
-      setCounter(value.toNumber());
-    }
-  }
+
  
   async function increment() {
     if (wallet) {
@@ -68,7 +63,6 @@ function AccountItem({ address, setCounter }: { address: string; setCounter: Rea
       const contract = CounterAbi__factory.connect(COUNTER_CONTRACT_ID, wallet);
       try {
         await contract.functions.increment().txParams({ gasPrice: 1 }).call();
-        getCount();
       } catch (err) {
         console.log("error sending transaction...", err);
       } finally {
@@ -122,13 +116,38 @@ function LogEvents() {
   return null;
 }
 
+function ContractCounter() {
+  const { wallet } = useWallet();
+  const [counter, setCounter] = useState(0);
+
+  useEffect(() => {
+    if (!wallet?.address) return;
+    getCount();
+    const interval = setInterval(() => getCount(), 5000);
+    return () => clearInterval(interval);
+  }, [wallet?.address]);
+
+  async function getCount() {
+    const contract = CounterAbi__factory.connect(COUNTER_CONTRACT_ID, wallet!);
+    const { value } = await contract.functions.count().dryRun();
+    setCounter(value.toNumber());
+  }
+
+  if (!wallet) return null;
+
+  return (
+    <div className='Counter'>
+      <h3>Counter: {counter}</h3>
+    </div>
+  );
+}
+
 function App() {
   const { connect, error, isError, theme, setTheme, isConnecting } =
     useConnectUI();
   const { disconnect } = useDisconnect();
   const { isConnected, refetch } = useIsConnected();
   const { accounts } = useAccounts();
-  const [counter, setCounter] = useState<number>(0);
   const lightTheme = theme === 'light';
 
   useEffect(() => {
@@ -178,18 +197,11 @@ function App() {
             <AccountItem
               key={account}
               address={account}
-              setCounter={setCounter}
             />
           ))}
         </div>
       )}
-      <div className='Counter'>
-        {isConnected && (
-          <h3>
-            {counter === 0 ? 'Increment to see the counter!' : `Counter: ${counter}`}
-          </h3>
-        )}
-      </div>
+      <ContractCounter />
       <div className='BottomInfo'>
         {isConnected && (
           <>
