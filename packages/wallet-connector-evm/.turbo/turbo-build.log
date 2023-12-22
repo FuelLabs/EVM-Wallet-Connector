@@ -1,0 +1,17 @@
+
+> @fuels/wallet-connector-evm@0.0.2 build /Users/mrbytes/fuels/EVM-Wallet-Connector/packages/wallet-connector-evm
+> tsx generatePredicateResources.ts && tsc && vite build
+
+Generated
+vite v5.0.10 building for production...
+transforming...
+✓ 1068 modules transformed.
+rendering chunks...
+
+[vite:dts] Start generate declaration files...
+computing gzip size...
+[vite:dts] Declaration files built in 779ms.
+
+dist/wallet-connector-evm.js  956.00 kB │ gzip: 258.45 kB
+dist/wallet-connector-evm.umd.cjs  668.69 kB │ gzip: 219.41 kB
+✓ built in 2.96s
