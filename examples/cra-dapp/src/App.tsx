@@ -8,7 +8,6 @@ import {
   useBalance,
   useIsConnected,
   useFuel,
-  useProvider
 } from '@fuel-wallet/react';
 import './App.css';
 import { CounterAbi__factory } from "./contracts";
@@ -72,8 +71,11 @@ function AccountItem({ address }: { address: string; }) {
   }
 
   return (
-    <div>
-      <b>Account:</b> {address} | <b>Balance:</b> {balance?.format() || '0'} ETH
+    <div className='AccountItem'>
+      <div className='AccountColumns'>
+        <span><b>Account:</b> {address}</span>
+        <span><b>Balance:</b> {balance?.format() || '0'} ETH</span>
+      </div>
       <div className='accountActions'>
         {!hasBalance && (
           <a href={`https://faucet-beta-4.fuel.network/?address=${address}`} target='_blank'>
@@ -118,14 +120,18 @@ function LogEvents() {
 
 function ContractCounter() {
   const { wallet } = useWallet();
+  const { balance } = useBalance({
+    address: wallet?.address.toString(),
+  });
   const [counter, setCounter] = useState(0);
+  const shouldShowCounter = wallet && balance?.gt(0);
 
   useEffect(() => {
-    if (!wallet?.address) return;
+    if (!shouldShowCounter) return;
     getCount();
     const interval = setInterval(() => getCount(), 5000);
     return () => clearInterval(interval);
-  }, [wallet?.address]);
+  }, [shouldShowCounter]);
 
   async function getCount() {
     const contract = CounterAbi__factory.connect(COUNTER_CONTRACT_ID, wallet!);
@@ -133,7 +139,7 @@ function ContractCounter() {
     setCounter(value.toNumber());
   }
 
-  if (!wallet) return null;
+  if (!shouldShowCounter) return null;
 
   return (
     <div className='Counter'>
@@ -207,9 +213,7 @@ function App() {
           <>
             <p>
               The counter contract is deployed to the address below:
-            </p>
-            <p>
-            0x32b066d8139d1c3bdde35c73925c2031802831cdb2feb8b283dbe3c49355e762.
+              {' '}<b>0x32b066d8139d1c3bdde35c73925c2031802831cdb2feb8b283dbe3c49355e762</b>.
             </p>
           </>
         )}
