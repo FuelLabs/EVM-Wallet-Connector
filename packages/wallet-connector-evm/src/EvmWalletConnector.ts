@@ -16,8 +16,7 @@ import {
   JsonAbi,
   Predicate,
   Address,
-  hashTransaction,
-  InputValue
+  InputValue, getPredicateRoot
 } from 'fuels';
 import {
   FuelConnector,
@@ -27,7 +26,6 @@ import {
 } from '@fuel-wallet/sdk';
 
 import { EIP1193Provider } from './eip-1193';
-import { getPredicateRoot } from './getPredicateRoot';
 import { predicates } from './predicateResources';
 import { METAMASK_ICON } from './metamask-icon';
 
@@ -61,7 +59,7 @@ export class EVMWalletConnector extends FuelConnector {
     this.predicate = predicates['verification-predicate'];
     this.installed = true;
     this.config = Object.assign(config, {
-      fuelProvider: 'https://beta-4.fuel.network/graphql',
+      fuelProvider: 'https://beta-5.fuel.network/graphql',
       ethProvider: (window as any).ethereum
     });
   }
@@ -223,7 +221,7 @@ export class EVMWalletConnector extends FuelConnector {
     const requestWithPredicateAttached =
       predicate.populateTransactionPredicateData(transactionRequest);
 
-    const txID = hashTransaction(requestWithPredicateAttached, chainId);
+    const txID = requestWithPredicateAttached.getTransactionId(chainId);
     const signature = await ethProvider.request({
       method: 'personal_sign',
       params: [txID, account.ethAccount]
@@ -268,7 +266,6 @@ export class EVMWalletConnector extends FuelConnector {
     // item in the accounts list.
     const fuelAccount = getPredicateAddress(
       ethAccounts[0]!,
-      fuelProvider.getChainId(),
       this.predicate.bytecode,
       this.predicate.abi
     );
@@ -344,7 +341,6 @@ export class EVMWalletConnector extends FuelConnector {
       ethAccount: account,
       predicateAccount: getPredicateAddress(
         account,
-        chainId,
         this.predicate.bytecode,
         this.predicate.abi
       )
@@ -356,7 +352,6 @@ export class EVMWalletConnector extends FuelConnector {
 export const getPredicateAddress = memoize(
   (
     ethAddress: string,
-    chainId: number,
     predicateBytecode: BytesLike,
     predicateAbi: JsonAbi
   ): string => {
@@ -372,7 +367,7 @@ export const getPredicateAddress = memoize(
       predicateAbi,
       configurable
     );
-    const address = Address.fromB256(getPredicateRoot(predicateBytes, chainId));
+    const address = Address.fromB256(getPredicateRoot(predicateBytes));
     return address.toString();
   }
 );

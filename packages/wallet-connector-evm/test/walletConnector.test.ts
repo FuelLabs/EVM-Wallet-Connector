@@ -73,7 +73,7 @@ describe('EVM Wallet Connector', () => {
 
     const predicateAccounts = await Promise.all(
       accounts.map(async (account) =>
-        getPredicateAddress(account, chainId, bytecode, abi)
+        getPredicateAddress(account, bytecode, abi)
       )
     );
 
