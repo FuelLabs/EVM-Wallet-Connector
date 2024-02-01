@@ -1,8 +1,8 @@
 use fuels::{
     accounts::{predicate::Predicate, Account},
-    prelude::{abigen, AssetId, Bech32Address, Provider, ScriptTransaction, TxParameters},
+    prelude::{abigen, AssetId, Bech32Address, Provider, ScriptTransaction, TxPolicies},
     types::{
-        transaction_builders::{NetworkInfo, ScriptTransactionBuilder, TransactionBuilder},
+        transaction_builders::{BuildableTransaction, ScriptTransactionBuilder},
         Bits256, EvmAddress,
     },
 };
@@ -47,7 +47,7 @@ pub(crate) async fn create_transaction(
     starting_balance: u64,
     transfer_amount: u64,
     recipient: &Bech32Address,
-    network_info: &NetworkInfo,
+    provider: &Provider,
 ) -> ScriptTransaction {
     // Fetch predicate input in order to have a UTXO with funds for transfer
     let inputs = predicate
@@ -62,11 +62,10 @@ pub(crate) async fn create_transaction(
     let transaction_builder = ScriptTransactionBuilder::prepare_transfer(
         inputs,
         outputs,
-        TxParameters::default(),
-        network_info.clone(),
+        TxPolicies::default().with_witness_limit(72),
     );
 
-    transaction_builder.build().unwrap()
+    transaction_builder.build(provider).await.unwrap()
 }
 
 // This can probably be cleaned up
