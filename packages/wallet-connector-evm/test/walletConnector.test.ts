@@ -52,7 +52,7 @@ describe('EVM Wallet Connector', () => {
       '0x6e48a022f9d4ae187bca4e2645abd62198ae294ee484766edbdaadf78160dc68';
     const { stop, provider } = await launchNodeAndGetWallets({
       launchNodeOptions: {
-        chainConfigPath: `${__dirname}/chainConfig.json`
+        args: ['--chain', `${__dirname}/chainConfig.json`],
       }
     });
     fuelProvider = provider;

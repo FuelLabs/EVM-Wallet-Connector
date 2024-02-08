@@ -16,7 +16,8 @@ import {
   JsonAbi,
   Predicate,
   Address,
-  InputValue, getPredicateRoot
+  InputValue, 
+  getPredicateRoot
 } from 'fuels';
 import {
   FuelConnector,
