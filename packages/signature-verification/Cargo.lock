@@ -1528,9 +1528,9 @@ dependencies = [
 
 [[package]]
 name = "fuel-core-types"
-version = "0.22.0"
+version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5dd06358708d4c61ef53ad73c26ae55a0ed59ba9096c56b64a1eb56af748e9f0"
+checksum = "a118f93a711e9a2555767235a37566754d265fdb295490abbfd9b93f38ebb640"
 dependencies = [
  "anyhow",
  "bs58",
