@@ -20,7 +20,7 @@ Prerequsite: have `forc` installed.
 In the root of the repository run
 
 ```bash
-forc build
+forc build --release
 ```
 
 This will build both projects and is required before tests can be run.

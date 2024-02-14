@@ -9,11 +9,11 @@ use fuels::{
 
 use ethers_core::types::{Signature, U256};
 
-const PREDICATE_BINARY_PATH: &str = "./out/debug/verification-predicate.bin";
+const PREDICATE_BINARY_PATH: &str = "./out/release/verification-predicate.bin";
 
 abigen!(Predicate(
     name = "MyPredicate",
-    abi = "verification-predicate/out/debug/verification-predicate-abi.json"
+    abi = "verification-predicate/out/release/verification-predicate-abi.json"
 ));
 
 fn pad_ethereum_address(eth_wallet_address: &[u8]) -> [u8; 32] {

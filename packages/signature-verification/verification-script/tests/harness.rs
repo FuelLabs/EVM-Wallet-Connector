@@ -10,11 +10,11 @@ use ethers_core::{
 };
 use ethers_signers::{LocalWallet, Signer as EthSigner};
 
-const SCRIPT_BINARY_PATH: &str = "./out/debug/verification-script.bin";
+const SCRIPT_BINARY_PATH: &str = "./out/release/verification-script.bin";
 
 abigen!(Script(
     name = "MyScript",
-    abi = "verification-script/out/debug/verification-script-abi.json"
+    abi = "verification-script/out/release/verification-script-abi.json"
 ));
 
 fn convert_eth_address(eth_wallet_address: &[u8]) -> [u8; 32] {
