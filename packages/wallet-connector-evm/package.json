@@ -16,7 +16,7 @@
 	"types": "./dist/index.d.ts",
 	"scripts": {
 		"build:resources": "tsx generatePredicateResources.ts",
-		"build": "tsc && vite build",
+		"build": "run-s build:resources && tsc && vite build",
 		"fmt": "prettier --config .prettierrc 'src/*.ts' 'test/*.ts' --write",
 		"test": "tsx generatePredicateResources.ts && mocha --require ts-node/register  test/*.test.ts"
 	},

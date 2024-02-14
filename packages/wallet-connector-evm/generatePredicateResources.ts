@@ -10,7 +10,7 @@ const predicates = ['verification-predicate'];
 let code = 'export const predicates = {\n';
 
 predicates.forEach((predicate) => {
-  const outputDirectory =  `${__dirname}/../signature-verification/${predicate}/out/debug`;
+  const outputDirectory =  `${__dirname}/../signature-verification/${predicate}/out/release`;
   const abiPath = `${outputDirectory}/${predicate}-abi.json`;
   const bytecodePath = `${outputDirectory}/${predicate}.bin`;
 
