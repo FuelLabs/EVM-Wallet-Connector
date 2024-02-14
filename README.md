@@ -12,8 +12,8 @@ to sign transactions on Fuel Network.
 - [🧑‍💻 Getting Started](#🧑‍💻-getting-started)
 - [🧰 Examples](./examples/)
 - 🗂️ Project
-    - [Predicate](./packages/signature-verification/)
-    - [EVM Wallet Connector](./packages/wallet-connector-evm/)
+  - [Predicate](./packages/signature-verification/)
+  - [EVM Wallet Connector](./packages/wallet-connector-evm/)
 - [📜 License](#📜-license)
 
 ## 📗 Description
@@ -51,24 +51,24 @@ sequenceDiagram
 ### Install
 
 ```sh
-npm install @fuels/wallet-connector-evm @fuel-wallet/sdk@0.14.0-preview-ce33146
+npm install @fuels/wallet-connector-evm @fuel-wallet/sdk@0.15.2
 ```
 
 ### Using
 
 ```ts
-import { Fuel, defaultConnectors } from '@fuel-wallet/sdk';
-import { EVMWalletConnector } from '@fuels/wallet-connector-evm';
+import { Fuel, defaultConnectors } from "@fuel-wallet/sdk";
+import { EVMWalletConnector } from "@fuels/wallet-connector-evm";
 
 const fuel = new Fuel({
   connectors: [
     // Also show other connectors like Fuel Wallet
     ...defaultConnectors(),
-    new EVMWalletConnector()
-  ]
+    new EVMWalletConnector(),
+  ],
 });
 
-await fuel.selectConnector('EVM wallet connector');
+await fuel.selectConnector("EVM wallet connector");
 const connection = await fuel.connect();
 console.log(connection);
 ```
@@ -87,7 +87,7 @@ pnpm build:all
 
 ```sh
 cd packages/signature-verification
-forc build
+forc build --release
 cargo test
 ```
 

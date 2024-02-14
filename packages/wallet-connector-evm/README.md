@@ -11,7 +11,7 @@ to sign transactions on Fuel Network.
 ### Install
 
 ```sh
-npm install @fuels/wallet-connector-evm @fuel-wallet/sdk@0.14.0-preview-ce33146
+npm install @fuels/wallet-connector-evm @fuel-wallet/sdk@0.15.2
 ```
 
 ### Using
