@@ -16,7 +16,7 @@ import {
   JsonAbi,
   Predicate,
   Address,
-  InputValue, 
+  InputValue,
   getPredicateRoot
 } from 'fuels';
 import {
@@ -30,11 +30,10 @@ import { EIP1193Provider } from './eip-1193';
 import { predicates } from './predicateResources';
 import { METAMASK_ICON } from './metamask-icon';
 
-
 type EVMWalletConnectorConfig = {
   fuelProvider?: Provider | string;
   ethProvider?: EIP1193Provider;
-}
+};
 
 export class EVMWalletConnector extends FuelConnector {
   ethProvider: EIP1193Provider | null = null;
@@ -74,16 +73,13 @@ export class EVMWalletConnector extends FuelConnector {
   async getProviders() {
     if (!this.fuelProvider || !this.ethProvider) {
       if (typeof window !== 'undefined') {
-        
         this.ethProvider = this.config.ethProvider;
         if (!this.ethProvider) {
           throw new Error('Ethereum provider not found');
         }
 
         if (typeof this.config.fuelProvider === 'string') {
-          this.fuelProvider = await Provider.create(
-            this.config.fuelProvider
-          );
+          this.fuelProvider = await Provider.create(this.config.fuelProvider);
         } else {
           this.fuelProvider = this.config.fuelProvider;
         }
@@ -329,10 +325,12 @@ export class EVMWalletConnector extends FuelConnector {
     return accounts.find((account) => account.predicateAccount === address);
   }
 
-  private async getPredicateAccounts(): Promise<Array<{
-    ethAccount: string;
-    predicateAccount: string;
-  }>> {
+  private async getPredicateAccounts(): Promise<
+    Array<{
+      ethAccount: string;
+      predicateAccount: string;
+    }>
+  > {
     const { ethProvider, fuelProvider } = await this.getProviders();
     const ethAccounts: Array<string> = await ethProvider.request({
       method: 'eth_accounts'

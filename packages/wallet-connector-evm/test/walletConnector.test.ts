@@ -19,7 +19,11 @@ import {
 } from 'fuels';
 import { launchNodeAndGetWallets } from '@fuel-ts/wallet/test-utils';
 import { MockProvider } from './mockProvider';
-import { EVMWalletConnector, createPredicate, getPredicateAddress } from '../src/index';
+import {
+  EVMWalletConnector,
+  createPredicate,
+  getPredicateAddress
+} from '../src/index';
 import { predicates } from '../src/predicateResources';
 
 chai.use(chaiAsPromised);
@@ -52,7 +56,7 @@ describe('EVM Wallet Connector', () => {
       '0x6e48a022f9d4ae187bca4e2645abd62198ae294ee484766edbdaadf78160dc68';
     const { stop, provider } = await launchNodeAndGetWallets({
       launchNodeOptions: {
-        args: ['--chain', `${__dirname}/chainConfig.json`],
+        args: ['--chain', `${__dirname}/chainConfig.json`]
       }
     });
     fuelProvider = provider;
@@ -86,7 +90,7 @@ describe('EVM Wallet Connector', () => {
     // Class contains state, reset the state for each test
     connector = new EVMWalletConnector({
       ethProvider,
-      fuelProvider,
+      fuelProvider
     });
   });
 
