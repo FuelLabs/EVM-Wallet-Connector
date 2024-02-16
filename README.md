@@ -4,7 +4,7 @@ This Connector is part of the effort to enable users to use their current **Meta
 to sign transactions on Fuel Network.
 
 > **Warning**
-> This project is under active development, the current version of the `@fuel-wallet/sdk` is not compatible with the new Connectors.
+> This project is under active development.
 
 ## 📗 Table of contents
 
