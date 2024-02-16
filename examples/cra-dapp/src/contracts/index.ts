@@ -4,11 +4,11 @@
 /* eslint-disable */
 
 /*
-  Fuels version: 0.67.0
-  Forc version: 0.46.1
-  Fuel-Core version: 0.20.8
+  Fuels version: 0.73.0
+  Forc version: 0.49.2
+  Fuel-Core version: 0.22.0
 */
 
-export type { CounterAbi } from './CounterAbi';
+export type { CounterContractAbi } from './CounterContractAbi';
 
-export { CounterAbi__factory } from './factories/CounterAbi__factory';
+export { CounterContractAbi__factory } from './factories/CounterContractAbi__factory';
