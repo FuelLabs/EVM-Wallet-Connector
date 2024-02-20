@@ -17,7 +17,7 @@ import {
   WalletUnlocked,
   ProviderOptions
 } from 'fuels';
-import { launchNodeAndGetWallets } from '@fuel-ts/wallet/test-utils';
+import { launchNodeAndGetWallets } from '@fuel-ts/account/test-utils';
 import { MockProvider } from './mockProvider';
 import {
   EVMWalletConnector,
