@@ -16,8 +16,8 @@ import {
   JsonAbi,
   Predicate,
   Address,
-  hashTransaction,
-  InputValue
+  InputValue,
+  getPredicateRoot
 } from 'fuels';
 import {
   FuelConnector,
@@ -27,15 +27,13 @@ import {
 } from '@fuel-wallet/sdk';
 
 import { EIP1193Provider } from './eip-1193';
-import { getPredicateRoot } from './getPredicateRoot';
 import { predicates } from './predicateResources';
 import { METAMASK_ICON } from './metamask-icon';
-
 
 type EVMWalletConnectorConfig = {
   fuelProvider?: Provider | string;
   ethProvider?: EIP1193Provider;
-}
+};
 
 export class EVMWalletConnector extends FuelConnector {
   ethProvider: EIP1193Provider | null = null;
@@ -61,7 +59,7 @@ export class EVMWalletConnector extends FuelConnector {
     this.predicate = predicates['verification-predicate'];
     this.installed = true;
     this.config = Object.assign(config, {
-      fuelProvider: 'https://beta-4.fuel.network/graphql',
+      fuelProvider: 'https://beta-5.fuel.network/graphql',
       ethProvider: (window as any).ethereum
     });
   }
@@ -75,16 +73,13 @@ export class EVMWalletConnector extends FuelConnector {
   async getProviders() {
     if (!this.fuelProvider || !this.ethProvider) {
       if (typeof window !== 'undefined') {
-        
         this.ethProvider = this.config.ethProvider;
         if (!this.ethProvider) {
           throw new Error('Ethereum provider not found');
         }
 
         if (typeof this.config.fuelProvider === 'string') {
-          this.fuelProvider = await Provider.create(
-            this.config.fuelProvider
-          );
+          this.fuelProvider = await Provider.create(this.config.fuelProvider);
         } else {
           this.fuelProvider = this.config.fuelProvider;
         }
@@ -166,6 +161,20 @@ export class EVMWalletConnector extends FuelConnector {
           }
         ]
       });
+      const wallet_chain_id = await ethProvider.request({
+        method: 'eth_chainId',
+        params: []
+      });
+      if (wallet_chain_id != '0x1') {
+        await ethProvider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [
+            {
+              chainId: '0x1'
+            }
+          ]
+        });
+      }
     }
     this.connected = true;
     return true;
@@ -223,7 +232,7 @@ export class EVMWalletConnector extends FuelConnector {
     const requestWithPredicateAttached =
       predicate.populateTransactionPredicateData(transactionRequest);
 
-    const txID = hashTransaction(requestWithPredicateAttached, chainId);
+    const txID = requestWithPredicateAttached.getTransactionId(chainId);
     const signature = await ethProvider.request({
       method: 'personal_sign',
       params: [txID, account.ethAccount]
@@ -268,7 +277,6 @@ export class EVMWalletConnector extends FuelConnector {
     // item in the accounts list.
     const fuelAccount = getPredicateAddress(
       ethAccounts[0]!,
-      fuelProvider.getChainId(),
       this.predicate.bytecode,
       this.predicate.abi
     );
@@ -331,10 +339,12 @@ export class EVMWalletConnector extends FuelConnector {
     return accounts.find((account) => account.predicateAccount === address);
   }
 
-  private async getPredicateAccounts(): Promise<Array<{
-    ethAccount: string;
-    predicateAccount: string;
-  }>> {
+  private async getPredicateAccounts(): Promise<
+    Array<{
+      ethAccount: string;
+      predicateAccount: string;
+    }>
+  > {
     const { ethProvider, fuelProvider } = await this.getProviders();
     const ethAccounts: Array<string> = await ethProvider.request({
       method: 'eth_accounts'
@@ -344,7 +354,6 @@ export class EVMWalletConnector extends FuelConnector {
       ethAccount: account,
       predicateAccount: getPredicateAddress(
         account,
-        chainId,
         this.predicate.bytecode,
         this.predicate.abi
       )
@@ -356,7 +365,6 @@ export class EVMWalletConnector extends FuelConnector {
 export const getPredicateAddress = memoize(
   (
     ethAddress: string,
-    chainId: number,
     predicateBytecode: BytesLike,
     predicateAbi: JsonAbi
   ): string => {
@@ -372,7 +380,7 @@ export const getPredicateAddress = memoize(
       predicateAbi,
       configurable
     );
-    const address = Address.fromB256(getPredicateRoot(predicateBytes, chainId));
+    const address = Address.fromB256(getPredicateRoot(predicateBytes));
     return address.toString();
   }
 );

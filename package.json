@@ -3,7 +3,7 @@
     "private": true,
     "license": "Apache-2.0",
     "scripts": {
-        "build:forc": "pnpm forc build --path ./packages/signature-verification",
+        "build:forc": "pnpm forc build --release --path ./packages/signature-verification",
         "build:all": "run-s build:forc build:connector",
         "build:connector": "pnpm run build --filter=wallet-connector-evm",
         "build": "turbo run build"

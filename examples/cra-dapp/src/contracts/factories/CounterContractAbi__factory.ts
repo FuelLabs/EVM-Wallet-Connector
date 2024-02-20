@@ -4,14 +4,14 @@
 /* eslint-disable */
 
 /*
-  Fuels version: 0.67.0
-  Forc version: 0.46.1
-  Fuel-Core version: 0.20.8
+  Fuels version: 0.73.0
+  Forc version: 0.49.2
+  Fuel-Core version: 0.22.0
 */
 
 import { Interface, Contract, ContractFactory } from "fuels";
 import type { Provider, Account, AbstractAddress, BytesLike, DeployContractOptions, StorageSlot } from "fuels";
-import type { CounterAbi, CounterAbiInterface } from "../CounterAbi";
+import type { CounterContractAbi, CounterContractAbiInterface } from "../CounterContractAbi";
 
 const _abi = {
   "types": [
@@ -77,36 +77,36 @@ const _storageSlots: StorageSlot[] = [
   }
 ];
 
-export class CounterAbi__factory {
+export class CounterContractAbi__factory {
   static readonly abi = _abi;
 
   static readonly storageSlots = _storageSlots;
 
-  static createInterface(): CounterAbiInterface {
-    return new Interface(_abi) as unknown as CounterAbiInterface
+  static createInterface(): CounterContractAbiInterface {
+    return new Interface(_abi) as unknown as CounterContractAbiInterface
   }
 
   static connect(
     id: string | AbstractAddress,
     accountOrProvider: Account | Provider
-  ): CounterAbi {
-    return new Contract(id, _abi, accountOrProvider) as unknown as CounterAbi
+  ): CounterContractAbi {
+    return new Contract(id, _abi, accountOrProvider) as unknown as CounterContractAbi
   }
 
   static async deployContract(
     bytecode: BytesLike,
     wallet: Account,
     options: DeployContractOptions = {}
-  ): Promise<CounterAbi> {
+  ): Promise<CounterContractAbi> {
     const factory = new ContractFactory(bytecode, _abi, wallet);
 
-    const { storageSlots } = CounterAbi__factory;
+    const { storageSlots } = CounterContractAbi__factory;
 
     const contract = await factory.deployContract({
       storageSlots,
       ...options,
     });
 
-    return contract as unknown as CounterAbi;
+    return contract as unknown as CounterContractAbi;
   }
 }

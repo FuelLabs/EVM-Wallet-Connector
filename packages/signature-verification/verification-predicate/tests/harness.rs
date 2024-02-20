@@ -2,10 +2,10 @@ mod utils;
 
 use utils::{compact, create_predicate, create_transaction};
 
-use fuel_tx::Witness;
 use fuels::{
     accounts::{Account, ViewOnlyAccount},
-    prelude::{launch_provider_and_get_wallet, AssetId, TxParameters},
+    prelude::{launch_provider_and_get_wallet, AssetId, TxPolicies},
+    tx::Witness,
     types::transaction::Transaction,
 };
 
@@ -19,7 +19,6 @@ async fn valid_signature_transfers_funds() {
 
     // Network related
     let fuel_provider = fuel_wallet.provider().unwrap();
-    let network_info = fuel_provider.network_info().await.unwrap();
 
     // Create an Ethereum wallet used to sign the Fuel Transaction ID
     let ethereum_wallet = LocalWallet::new(&mut thread_rng());
@@ -40,7 +39,7 @@ async fn valid_signature_transfers_funds() {
             &predicate.address().clone(),
             starting_balance,
             asset_id,
-            TxParameters::default(),
+            TxPolicies::default(),
         )
         .await
         .unwrap();
@@ -52,12 +51,12 @@ async fn valid_signature_transfers_funds() {
         starting_balance,
         transfer_amount,
         fuel_wallet.address(),
-        &network_info,
+        fuel_provider,
     )
     .await;
 
     // Now that we have the Tx the Ethereum wallet must sign the ID of the Fuel Tx
-    let tx_id = script_transaction.id(network_info.chain_id());
+    let tx_id = script_transaction.id(fuel_provider.chain_id());
 
     // Original signature `{ r, s, v }` which is equivalent to [u8; 65]
     let signature = ethereum_wallet.sign_message(*tx_id).await.unwrap();
@@ -66,7 +65,9 @@ async fn valid_signature_transfers_funds() {
     let compact_signature = compact(&signature);
 
     // Add the signed data as a witness onto the Tx
-    script_transaction.append_witness(Witness::from(compact_signature.to_vec()));
+    script_transaction
+        .append_witness(Witness::from(compact_signature.to_vec()))
+        .unwrap();
 
     // Check predicate balance before sending the Tx
     let balance_before = predicate.get_asset_balance(&asset_id).await.unwrap();
@@ -91,7 +92,6 @@ async fn invalid_signature_reverts_predicate() {
 
     // Network related
     let fuel_provider = fuel_wallet.provider().unwrap();
-    let network_info = fuel_provider.network_info().await.unwrap();
 
     // Create an Ethereum wallet used to sign the Fuel Transaction ID
     let ethereum_wallet = LocalWallet::new(&mut thread_rng());
@@ -112,7 +112,7 @@ async fn invalid_signature_reverts_predicate() {
             &predicate.address().clone(),
             starting_balance,
             asset_id,
-            TxParameters::default(),
+            TxPolicies::default(),
         )
         .await
         .unwrap();
@@ -124,12 +124,12 @@ async fn invalid_signature_reverts_predicate() {
         starting_balance,
         transfer_amount,
         fuel_wallet.address(),
-        &network_info,
+        fuel_provider,
     )
     .await;
 
     // Now that we have the Tx the Ethereum wallet must sign the ID of the Fuel Tx
-    let tx_id = script_transaction.id(network_info.chain_id());
+    let tx_id = script_transaction.id(fuel_provider.chain_id());
 
     // Original signature `{ r, s, v }` which is equivalent to [u8; 65]
     let signature = ethereum_wallet.sign_message(*tx_id).await.unwrap();
@@ -147,7 +147,9 @@ async fn invalid_signature_reverts_predicate() {
     }
 
     // Add the signed data as a witness onto the Tx
-    script_transaction.append_witness(Witness::from(compact_signature.to_vec()));
+    script_transaction
+        .append_witness(Witness::from(compact_signature.to_vec()))
+        .unwrap();
 
     // Execute the Tx, causing a revert because the predicate fails to recovery correct address
     let tx_result = fuel_provider.send_transaction(script_transaction).await;

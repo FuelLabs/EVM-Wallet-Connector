@@ -7,26 +7,22 @@ import {
   useWallet,
   useBalance,
   useIsConnected,
-  useFuel,
+  useFuel
 } from '@fuel-wallet/react';
 import './App.css';
-import { CounterAbi__factory } from "./contracts";
-import {
-  bn,
-  Address,
-  BaseAssetId,
-} from 'fuels';
+import { CounterContractAbi__factory } from './contracts';
+import { bn, Address, BaseAssetId } from 'fuels';
 
 const COUNTER_CONTRACT_ID =
-  "0x32b066d8139d1c3bdde35c73925c2031802831cdb2feb8b283dbe3c49355e762";
+  '0x0a46aafb83b387155222893b52ed12e5a4b9d6cd06770786f2b5e4307a63b65c';
 const DEFAULT_ADDRESS = Address.fromRandom().toString();
 const DEFAULT_AMOUNT = bn.parseUnits('0.001');
 
-function AccountItem({ address }: { address: string; }) {
+function AccountItem({ address }: { address: string }) {
   const [isLoading, setLoading] = useState(false);
   const [isLoadingCall, setLoadingCall] = useState(false);
   const { balance, refetch } = useBalance({
-    address,
+    address
   });
   const { wallet } = useWallet(address);
   const hasBalance = balance && balance.gte(DEFAULT_AMOUNT);
@@ -40,11 +36,16 @@ function AccountItem({ address }: { address: string; }) {
     setLoading(true);
     try {
       const receiverAddress = prompt('Receiver address', DEFAULT_ADDRESS);
-      const receiver = Address.fromString(receiverAddress || DEFAULT_ADDRESS);    
-      const resp = await wallet?.transfer(receiver, DEFAULT_AMOUNT, BaseAssetId, {
-        gasPrice: 1,
-        gasLimit: 10_000,
-      });
+      const receiver = Address.fromString(receiverAddress || DEFAULT_ADDRESS);
+      const resp = await wallet?.transfer(
+        receiver,
+        DEFAULT_AMOUNT,
+        BaseAssetId,
+        {
+          gasPrice: 1,
+          gasLimit: 10_000
+        }
+      );
       const result = await resp?.waitForResult();
       console.log(result?.status);
     } catch (err: any) {
@@ -54,16 +55,20 @@ function AccountItem({ address }: { address: string; }) {
     }
   }
 
-
- 
   async function increment() {
     if (wallet) {
       setLoadingCall(true);
-      const contract = CounterAbi__factory.connect(COUNTER_CONTRACT_ID, wallet);
+      const contract = CounterContractAbi__factory.connect(
+        COUNTER_CONTRACT_ID,
+        wallet
+      );
       try {
-        await contract.functions.increment().txParams({ gasPrice: 1 }).call();
+        await contract.functions
+          .increment()
+          .txParams({ gasPrice: 1, gasLimit: 100_000 })
+          .call();
       } catch (err) {
-        console.log("error sending transaction...", err);
+        console.log('error sending transaction...', err);
       } finally {
         setLoadingCall(false);
       }
@@ -71,28 +76,43 @@ function AccountItem({ address }: { address: string; }) {
   }
 
   return (
-    <div className='AccountItem'>
-      <div className='AccountColumns'>
-        <span><b>Account:</b> {address}</span>
-        <span><b>Balance:</b> {balance?.format() || '0'} ETH</span>
+    <div className="AccountItem">
+      <div className="AccountColumns">
+        <span>
+          <b>Account:</b> {address}{' '}
+        </span>
+        <span>
+          <b>Balance:</b> {balance?.format() || '0'} ETH
+        </span>
       </div>
-      <div className='accountActions'>
+      <div className="accountActions">
         {!hasBalance && (
-          <a href={`https://faucet-beta-4.fuel.network/?address=${address}`} target='_blank'>
-            <button>
-              Get some coins
-            </button>
+          <a
+            href={`https://faucet-beta-5.fuel.network/?address=${address}`}
+            target="_blank"
+          >
+            <button>Get some coins</button>
           </a>
         )}
-        <button onClick={() => increment()} disabled={isLoadingCall || !hasBalance}>
-          {isLoadingCall ? 'Incrementing...' : 'Increment the counter on a contract'}
+        <button
+          onClick={() => increment()}
+          disabled={isLoadingCall || !hasBalance}
+        >
+          {isLoadingCall
+            ? 'Incrementing...'
+            : 'Increment the counter on a contract'}
         </button>
-        <button onClick={() => handleTransfer()} disabled={isLoading || !hasBalance}>
-          {isLoading ? 'Transferring...' : `Transfer ${DEFAULT_AMOUNT.format()} ETH`}
+        <button
+          onClick={() => handleTransfer()}
+          disabled={isLoading || !hasBalance}
+        >
+          {isLoading
+            ? 'Transferring...'
+            : `Transfer ${DEFAULT_AMOUNT.format()} ETH`}
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 function LogEvents() {
@@ -112,7 +132,7 @@ function LogEvents() {
       fuel.off(fuel.events.accounts, logAccounts);
       fuel.off(fuel.events.connection, logConnection);
       fuel.off(fuel.events.currentAccount, logCurrentAccount);
-    }
+    };
   }, [fuel]);
 
   return null;
@@ -121,7 +141,7 @@ function LogEvents() {
 function ContractCounter() {
   const { wallet } = useWallet();
   const { balance } = useBalance({
-    address: wallet?.address.toString(),
+    address: wallet?.address.toString()
   });
   const [counter, setCounter] = useState(0);
   const shouldShowCounter = wallet && balance?.gt(0);
@@ -133,16 +153,29 @@ function ContractCounter() {
     return () => clearInterval(interval);
   }, [shouldShowCounter]);
 
-  async function getCount() {
-    const contract = CounterAbi__factory.connect(COUNTER_CONTRACT_ID, wallet!);
-    const { value } = await contract.functions.count().dryRun();
-    setCounter(value.toNumber());
-  }
+  const getCount = async () => {
+    const counterContract = CounterContractAbi__factory.connect(
+      COUNTER_CONTRACT_ID,
+      wallet!
+    );
+    try {
+      const { value } = await counterContract.functions
+        .count()
+        .txParams({
+          gasPrice: 1,
+          gasLimit: 100_000
+        })
+        .simulate();
+      setCounter(value.toNumber());
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   if (!shouldShowCounter) return null;
 
   return (
-    <div className='Counter'>
+    <div className="Counter">
       <h3>Counter: {counter}</h3>
     </div>
   );
@@ -180,14 +213,16 @@ function App() {
           {lightTheme ? '🌙' : '☀️'}
         </button>
       </div>
-      <div className='Info'>
+      <div className="Info">
         {isConnected && (
           <>
             <p>
-              The connected accounts below are the predicate accounts on Fuel for each of the connected EVM wallet accounts.
+              The connected accounts below are the predicate accounts on Fuel
+              for each of the connected EVM wallet accounts.
             </p>
             <p>
-              You can use an EVM wallet account to send transactions from its corresponding predicate account.
+              You can use an EVM wallet account to send transactions from its
+              corresponding predicate account.
             </p>
             <p>
               Additional accounts can be connected via the EVM wallet extension.
@@ -200,20 +235,17 @@ function App() {
         <div className="Accounts">
           <h3>Connected accounts</h3>
           {accounts?.map((account) => (
-            <AccountItem
-              key={account}
-              address={account}
-            />
+            <AccountItem key={account} address={account} />
           ))}
         </div>
       )}
       <ContractCounter />
-      <div className='BottomInfo'>
+      <div className="BottomInfo">
         {isConnected && (
           <>
             <p>
-              The counter contract is deployed to the address below:
-              {' '}<b>0x32b066d8139d1c3bdde35c73925c2031802831cdb2feb8b283dbe3c49355e762</b>.
+              The counter contract is deployed to the address below:{' '}
+              <b>{COUNTER_CONTRACT_ID}</b>.
             </p>
           </>
         )}

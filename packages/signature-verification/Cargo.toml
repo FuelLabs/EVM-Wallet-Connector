@@ -13,6 +13,5 @@ repository = "https://github.com/FuelLabs/EVM-Wallet-Connector"
 [workspace.dependencies]
 ethers-core = "2.0"
 ethers-signers = "2.0"
-fuels = { version = "0.50.1", features = ["fuel-core-lib"] }
-fuel-tx = "0.35.3"
+fuels = { version = "0.55", features = ["fuel-core-lib"] }
 tokio = { version = "1.12", features = ["rt", "macros"] }

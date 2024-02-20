@@ -1,6 +1,6 @@
-use fuel_tx::Witness;
 use fuels::{
-    prelude::{abigen, launch_provider_and_get_wallet},
+    prelude::{abigen, launch_provider_and_get_wallet, TxPolicies},
+    tx::Witness,
     types::{transaction::Transaction, Bits256, EvmAddress},
 };
 
@@ -10,11 +10,11 @@ use ethers_core::{
 };
 use ethers_signers::{LocalWallet, Signer as EthSigner};
 
-const SCRIPT_BINARY_PATH: &str = "./out/debug/verification-script.bin";
+const SCRIPT_BINARY_PATH: &str = "./out/release/verification-script.bin";
 
 abigen!(Script(
     name = "MyScript",
-    abi = "verification-script/out/debug/verification-script-abi.json"
+    abi = "verification-script/out/release/verification-script-abi.json"
 ));
 
 fn convert_eth_address(eth_wallet_address: &[u8]) -> [u8; 32] {
@@ -28,10 +28,6 @@ async fn valid_signature_returns_true_for_validating() {
     // Create a Fuel wallet which will fund the predicate for test purposes
     let fuel_wallet = launch_provider_and_get_wallet().await.unwrap();
 
-    // Network related
-    let fuel_provider = fuel_wallet.provider().unwrap();
-    let _network_info = fuel_provider.network_info().await.unwrap();
-
     // Create eth wallet and convert to EVMAddress
     let eth_wallet = LocalWallet::new(&mut thread_rng());
     let padded_eth_address = convert_eth_address(&eth_wallet.address().0);
@@ -43,7 +39,12 @@ async fn valid_signature_returns_true_for_validating() {
 
     let script_call_handler = MyScript::new(fuel_wallet.clone(), SCRIPT_BINARY_PATH)
         .with_configurables(configurables)
-        .main(witness_index);
+        .main(witness_index)
+        .with_tx_policies(
+            TxPolicies::default()
+                .with_witness_limit(144)
+                .with_script_gas_limit(1_000_000),
+        );
 
     let mut tx = script_call_handler.build_tx().await.unwrap();
 
@@ -57,7 +58,8 @@ async fn valid_signature_returns_true_for_validating() {
     let compact_signature = compact(&signature);
 
     // Add the signed data as a witness onto the Tx
-    tx.append_witness(Witness::from(compact_signature.to_vec()));
+    tx.append_witness(Witness::from(compact_signature.to_vec()))
+        .unwrap();
 
     // Execute the Tx
     let tx_id = fuel_wallet
@@ -67,15 +69,14 @@ async fn valid_signature_returns_true_for_validating() {
         .await
         .unwrap();
 
-    let receipts = fuel_wallet
+    let tx_status = fuel_wallet
         .provider()
         .unwrap()
         .tx_status(&tx_id)
         .await
-        .unwrap()
-        .take_receipts();
+        .unwrap();
 
-    let response = script_call_handler.get_response(receipts).unwrap();
+    let response = script_call_handler.get_response_from(tx_status).unwrap();
 
     assert!(response.value);
 }
@@ -84,10 +85,6 @@ async fn valid_signature_returns_true_for_validating() {
 async fn invalid_signature_returns_false_for_failed_validation() {
     // Create a Fuel wallet which will fund the predicate for test purposes
     let fuel_wallet = launch_provider_and_get_wallet().await.unwrap();
-
-    // Network related
-    let fuel_provider = fuel_wallet.provider().unwrap();
-    let _network_info = fuel_provider.network_info().await.unwrap();
 
     // Create eth wallet and convert to EVMAddress
     let eth_wallet = LocalWallet::new(&mut thread_rng());
@@ -100,7 +97,12 @@ async fn invalid_signature_returns_false_for_failed_validation() {
 
     let script_call_handler = MyScript::new(fuel_wallet.clone(), SCRIPT_BINARY_PATH)
         .with_configurables(configurables)
-        .main(witness_index);
+        .main(witness_index)
+        .with_tx_policies(
+            TxPolicies::default()
+                .with_witness_limit(144)
+                .with_script_gas_limit(1_000_000),
+        );
 
     let mut tx = script_call_handler.build_tx().await.unwrap();
 
@@ -123,7 +125,8 @@ async fn invalid_signature_returns_false_for_failed_validation() {
     }
 
     // Add the signed data as a witness onto the Tx
-    tx.append_witness(Witness::from(compact_signature.to_vec()));
+    tx.append_witness(Witness::from(compact_signature.to_vec()))
+        .unwrap();
 
     // Execute the Tx
     let tx_id = fuel_wallet
@@ -133,15 +136,14 @@ async fn invalid_signature_returns_false_for_failed_validation() {
         .await
         .unwrap();
 
-    let receipts = fuel_wallet
+    let tx_status = fuel_wallet
         .provider()
         .unwrap()
         .tx_status(&tx_id)
         .await
-        .unwrap()
-        .take_receipts();
+        .unwrap();
 
-    let response = script_call_handler.get_response(receipts).unwrap();
+    let response = script_call_handler.get_response_from(tx_status).unwrap();
 
     assert!(!response.value);
 }

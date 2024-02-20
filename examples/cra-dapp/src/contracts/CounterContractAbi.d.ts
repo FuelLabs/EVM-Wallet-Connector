@@ -4,9 +4,9 @@
 /* eslint-disable */
 
 /*
-  Fuels version: 0.67.0
-  Forc version: 0.46.1
-  Fuel-Core version: 0.20.8
+  Fuels version: 0.73.0
+  Forc version: 0.49.2
+  Fuel-Core version: 0.22.0
 */
 
 import type {
@@ -20,7 +20,7 @@ import type {
   InvokeFunction,
 } from 'fuels';
 
-interface CounterAbiInterface extends Interface {
+interface CounterContractAbiInterface extends Interface {
   functions: {
     count: FunctionFragment;
     increment: FunctionFragment;
@@ -33,8 +33,8 @@ interface CounterAbiInterface extends Interface {
   decodeFunctionData(functionFragment: 'increment', data: BytesLike): DecodedValue;
 }
 
-export class CounterAbi extends Contract {
-  interface: CounterAbiInterface;
+export class CounterContractAbi extends Contract {
+  interface: CounterContractAbiInterface;
   functions: {
     count: InvokeFunction<[], BN>;
     increment: InvokeFunction<[], void>;

@@ -70,7 +70,9 @@ fn personal_sign_hash(transaction_id: b256) -> b256 {
     };
 
     // Pointer to the data we have signed external to Sway.
-    let data_ptr = asm(ptr: data.transaction_id) { ptr };
+    let data_ptr = asm(ptr: data.transaction_id) {
+        ptr
+    };
 
     // The Ethereum prefix is 28 bytes (plus padding we exclude). 
     // The Tx ID is 32 bytes at the end of the prefix.
@@ -81,8 +83,15 @@ fn personal_sign_hash(transaction_id: b256) -> b256 {
 
     // Copy the Tx ID to the end of the prefix and hash the exact len of the prefix and id (without
     // the padding at the end because that would alter the hash).
-    asm(hash: buffer, tx_id: data_ptr, end_of_prefix: data_ptr + len_to_hash, prefix: data.ethereum_prefix, id_len: 32, hash_len: len_to_hash) {
-        mcp  end_of_prefix tx_id id_len;
+    asm(
+        hash: buffer,
+        tx_id: data_ptr,
+        end_of_prefix: data_ptr + len_to_hash,
+        prefix: data.ethereum_prefix,
+        id_len: 32,
+        hash_len: len_to_hash,
+    ) {
+        mcp end_of_prefix tx_id id_len;
         k256 hash prefix hash_len;
     }
 
