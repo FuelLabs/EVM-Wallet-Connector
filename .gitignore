@@ -1,6 +1,6 @@
 # predicate
 target
-out
+packages/signature-verification/verification-script/out
 */*.lock
 
 ## Misc
