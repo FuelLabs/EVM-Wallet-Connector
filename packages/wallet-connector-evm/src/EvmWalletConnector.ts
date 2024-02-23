@@ -35,6 +35,9 @@ type EVMWalletConnectorConfig = {
   ethProvider?: EIP1193Provider;
 };
 
+const HAS_WINDOW = typeof window !== 'undefined';
+const WINDOW: any = HAS_WINDOW ? window : {};
+
 export class EVMWalletConnector extends FuelConnector {
   ethProvider: EIP1193Provider | null = null;
   fuelProvider: Provider | null = null;
@@ -60,7 +63,17 @@ export class EVMWalletConnector extends FuelConnector {
     this.installed = true;
     this.config = Object.assign(config, {
       fuelProvider: 'https://beta-5.fuel.network/graphql',
-      ethProvider: (window as any).ethereum
+      ethProvider: config.ethProvider || (window as any).ethereum
+    });
+  }
+
+  async getLazyEthereum() {
+    if (this.config.ethProvider) return this.config.ethProvider;
+    if (WINDOW.ethereum) return WINDOW.ethereum;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(WINDOW.ethereum);
+      }, 500);
     });
   }
 
@@ -72,23 +85,20 @@ export class EVMWalletConnector extends FuelConnector {
 
   async getProviders() {
     if (!this.fuelProvider || !this.ethProvider) {
-      if (typeof window !== 'undefined') {
-        this.ethProvider = this.config.ethProvider;
-        if (!this.ethProvider) {
-          throw new Error('Ethereum provider not found');
-        }
+      this.ethProvider = await this.getLazyEthereum();
 
-        if (typeof this.config.fuelProvider === 'string') {
-          this.fuelProvider = await Provider.create(this.config.fuelProvider);
-        } else {
-          this.fuelProvider = this.config.fuelProvider;
-        }
+      if (!this.ethProvider) {
+        throw new Error('Ethereum provider not found');
+      }
 
-        if (!this.fuelProvider) {
-          throw new Error('Fuel provider not found');
-        }
+      if (typeof this.config.fuelProvider === 'string') {
+        this.fuelProvider = await Provider.create(this.config.fuelProvider);
       } else {
-        throw new Error('window.ethereum not found');
+        this.fuelProvider = this.config.fuelProvider;
+      }
+
+      if (!this.fuelProvider) {
+        throw new Error('Fuel provider not found');
       }
     }
 

@@ -18,7 +18,7 @@
 		"build:resources": "tsx generatePredicateResources.ts",
 		"build": "run-s build:resources && tsc && vite build",
 		"fmt": "prettier --config .prettierrc 'src/*.ts' 'test/*.ts' --write",
-		"test": "run-s build:resources && mocha --require ts-node/register  test/*.test.ts"
+		"test": "run-s build:resources && mocha --require ts-node/register test/*.test.ts"
 	},
 	"dependencies": {
 		"@ethereumjs/util": "^9.0.1",
