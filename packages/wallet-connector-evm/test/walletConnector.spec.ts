@@ -1,12 +1,5 @@
-import chai, { expect } from 'chai';
-import chaiAsPromised from 'chai-as-promised';
-
+import { expect, test, describe, beforeAll, beforeEach, afterAll, afterEach } from 'vitest'
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 import type { Asset } from '@fuel-wallet/types';
 import {
   bn,
@@ -19,14 +12,12 @@ import {
 } from 'fuels';
 import { launchNodeAndGetWallets } from '@fuel-ts/account/test-utils';
 import { MockProvider } from './mockProvider';
+import {testEVMWalletConnector as EVMWalletConnector} from './testConnector';
 import {
-  EVMWalletConnector,
   createPredicate,
   getPredicateAddress
 } from '../src/index';
 import { predicates } from '../src/predicateResources';
-
-chai.use(chaiAsPromised);
 
 const predicate = 'verification-predicate';
 
@@ -51,19 +42,19 @@ describe('EVM Wallet Connector', () => {
   const bytecode = predicates[predicate].bytecode;
   const abi = predicates[predicate].abi;
 
-  before(async () => {
-    process.env.GENESIS_SECRET =
-      '0x6e48a022f9d4ae187bca4e2645abd62198ae294ee484766edbdaadf78160dc68';
+  beforeAll(async () => {
+    const chainConfigPath = path.join(process.cwd(), '.chainConfig.json');
+
     const { stop, provider } = await launchNodeAndGetWallets({
       launchNodeOptions: {
-        args: ['--chain', `${__dirname}/chainConfig.json`]
-      }
+        args: ['--chain', chainConfigPath],
+      },
     });
     fuelProvider = provider;
     stopProvider = stop;
   });
 
-  after(() => {
+  afterAll(() => {
     stopProvider && stopProvider();
   });
 
@@ -88,10 +79,10 @@ describe('EVM Wallet Connector', () => {
     predicateAccount2 = predicateAccounts[1]!;
 
     // Class contains state, reset the state for each test
-    connector = new EVMWalletConnector({
+    connector = new EVMWalletConnector(
       ethProvider,
       fuelProvider
-    });
+    );
   });
 
   afterEach(() => {
@@ -99,7 +90,7 @@ describe('EVM Wallet Connector', () => {
   });
 
   describe('connect()', () => {
-    it('connects to ethers signer', async () => {
+    test('connects to ethers signer', async () => {
       let connected = await connector.connect();
 
       expect(connected).to.be.true;
@@ -107,13 +98,13 @@ describe('EVM Wallet Connector', () => {
   });
 
   describe('isConnected()', () => {
-    it('false when not connected', async () => {
+    test('false when not connected', async () => {
       let connected = await connector.isConnected();
 
       expect(connected).to.be.false;
     });
 
-    it('true when connected', async () => {
+    test('true when connected', async () => {
       await connector.connect();
       let connected = await connector.isConnected();
 
@@ -122,7 +113,7 @@ describe('EVM Wallet Connector', () => {
   });
 
   describe('disconnect()', () => {
-    it('disconnects from ethers signer', async () => {
+    test('disconnects from ethers signer', async () => {
       await connector.connect();
 
       let connected = await connector.disconnect();
@@ -132,7 +123,7 @@ describe('EVM Wallet Connector', () => {
   });
 
   describe('accounts()', () => {
-    it('returns the predicate accounts associated with the wallet', async () => {
+    test('returns the predicate accounts associated with the wallet', async () => {
       await connector.connect();
 
       let predicateAccounts = await connector.accounts();
@@ -145,7 +136,7 @@ describe('EVM Wallet Connector', () => {
   });
 
   describe('currentAccount()', () => {
-    it('returns the predicate account associated with the current signer account', async () => {
+    test('returns the predicate account associated with the current signer account', async () => {
       await connector.connect();
 
       let account = await connector.currentAccount();
@@ -153,18 +144,18 @@ describe('EVM Wallet Connector', () => {
       expect(account).to.be.equal(predicateAccount1);
     });
 
-    it('throws error when not connected', async () => {
-      await expect(connector.currentAccount()).to.be.rejectedWith(
+    test('throws error when not connected', async () => {
+      await expect(connector.currentAccount()).throws(
         'No connected accounts'
       );
     });
   });
 
   describe('signMessage()', () => {
-    it('throws error', async () => {
+    test('throws error', async () => {
       await expect(
         connector.signMessage('address', 'message')
-      ).to.be.rejectedWith('Not implemented');
+      ).throws('Not implemented');
     });
   });
 
@@ -172,7 +163,7 @@ describe('EVM Wallet Connector', () => {
     const ALT_ASSET_ID =
       '0x0101010101010101010101010101010101010101010101010101010101010101';
 
-    it('transfer when signer is not passed in', async () => {
+    test('transfer when signer is not passed in', async () => {
       let predicate = await createPredicate(
         ethAccount1,
         fuelProvider,
@@ -262,7 +253,7 @@ describe('EVM Wallet Connector', () => {
       );
     });
 
-    it('transfer when the current signer is passed in', async () => {
+    test('transfer when the current signer is passed in', async () => {
       let predicate = await createPredicate(
         ethAccount1,
         fuelProvider,
@@ -351,7 +342,7 @@ describe('EVM Wallet Connector', () => {
       );
     });
 
-    it('transfer when a different valid signer is passed in', async () => {
+    test('transfer when a different valid signer is passed in', async () => {
       let predicate = await createPredicate(
         ethAccount2,
         fuelProvider,
@@ -440,7 +431,7 @@ describe('EVM Wallet Connector', () => {
       );
     });
 
-    it('errors when an invalid signer is passed in', async () => {
+    test('errors when an invalid signer is passed in', async () => {
       let predicate = await createPredicate(
         ethAccount1,
         fuelProvider,
@@ -516,18 +507,18 @@ describe('EVM Wallet Connector', () => {
           predicateAccount2.replaceAll('h', 'X'),
           transactionRequest
         )
-      ).to.be.rejectedWith('Invalid account');
+      ).throws('Invalid account');
     });
   });
 
   describe('assets()', () => {
-    it('returns an empty array', async () => {
+    test('returns an empty array', async () => {
       expect(await connector.assets()).to.deep.equal([]);
     });
   });
 
   describe('addAsset()', () => {
-    it('returns false', async () => {
+    test('returns false', async () => {
       const asset: Asset = {
         name: '',
         symbol: '',
@@ -539,33 +530,33 @@ describe('EVM Wallet Connector', () => {
   });
 
   describe('addAssets()', () => {
-    it('returns false', async () => {
+    test('returns false', async () => {
       expect(await connector.addAssets([])).to.be.false;
     });
   });
 
   describe('addAbi()', () => {
-    it('returns false', async () => {
+    test('returns false', async () => {
       expect(await connector.addAbi({})).to.be.false;
     });
   });
 
   describe('getAbi()', () => {
-    it('throws error', async () => {
-      await expect(connector.getAbi('contractId')).to.be.rejectedWith(
+    test('throws error', async () => {
+      await expect(connector.getAbi('contractId')).throws(
         'Cannot get contractId ABI for a predicate'
       );
     });
   });
 
   describe('hasAbi()', () => {
-    it('returns false', async () => {
+    test('returns false', async () => {
       expect(await connector.hasAbi('contractId')).to.be.false;
     });
   });
 
   describe('network()', () => {
-    it('returns the fuel network info', async () => {
+    test('returns the fuel network info', async () => {
       let network = await connector.currentNetwork();
 
       expect(network.chainId.toString()).to.be.equal(
@@ -576,7 +567,7 @@ describe('EVM Wallet Connector', () => {
   });
 
   describe('networks()', () => {
-    it('returns an array of fuel network info', async () => {
+    test('returns an array of fuel network info', async () => {
       let networks = await connector.networks();
       let network = networks.pop();
 
@@ -588,8 +579,8 @@ describe('EVM Wallet Connector', () => {
   });
 
   describe('addNetwork()', () => {
-    it('throws error', async () => {
-      await expect(connector.addNetwork('')).to.be.rejectedWith(
+    test('throws error', async () => {
+      await expect(connector.addNetwork('')).throws(
         'Not implemented'
       );
     });
