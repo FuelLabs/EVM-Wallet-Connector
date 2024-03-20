@@ -140,19 +140,19 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-//   describe('currentAccount()', () => {
-//     test('returns the predicate account associated with the current signer account', async () => {
-//       await connector.connect();
+  describe('currentAccount()', () => {
+    test('returns the predicate account associated with the current signer account', async () => {
+      await connector.connect();
 
-//       let account = await connector.currentAccount();
+      let account = await connector.currentAccount();
 
-//       expect(account).to.be.equal(predicateAccount1);
-//     });
+      expect(account).to.be.equal(predicateAccount1);
+    });
 
-//     test('throws error when not connected', async () => {
-//       await expect(connector.currentAccount()).throw('No connected accounts');
-//     });
-//   });
+    test('throws error when not connected', async () => {
+      await expect(() => connector.currentAccount()).rejects.toThrowError('No connected accounts');
+    });
+  });
 
 //   describe('signMessage()', () => {
 //     test('throws error', async () => {
