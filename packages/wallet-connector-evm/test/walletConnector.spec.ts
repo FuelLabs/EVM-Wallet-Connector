@@ -154,13 +154,11 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-//   describe('signMessage()', () => {
-//     test('throws error', async () => {
-//       await expect(connector.signMessage('address', 'message')).throw(
-//         'Not implemented'
-//       );
-//     });
-//   });
+  describe('signMessage()', () => {
+    test('throws error', async () => {
+      await expect(() => connector.signMessage('address', 'message')).rejects.toThrowError('A predicate account cannot sign messages');
+    });
+  });
 
 //   describe('sendTransaction()', () => {
 //     const ALT_ASSET_ID =
