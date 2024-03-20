@@ -8,7 +8,6 @@ import {
 import { hexToBytes } from '@ethereumjs/util';
 import memoize from 'memoizee';
 
-import { Asset, AbiMap } from '@fuel-wallet/types';
 import {
   Provider,
   transactionRequestify,
@@ -17,14 +16,14 @@ import {
   Predicate,
   Address,
   InputValue,
-  getPredicateRoot
-} from 'fuels';
-import {
+  getPredicateRoot,
+  Asset,
+  AbiMap,
   FuelConnector,
   Network,
   Version,
   ConnectorMetadata
-} from '@fuel-wallet/sdk';
+} from 'fuels';
 
 import { EIP1193Provider } from './eip-1193';
 import { predicates } from './predicateResources';
@@ -230,10 +229,10 @@ export class EVMWalletConnector extends FuelConnector {
       account.ethAccount,
       fuelProvider,
       this.predicate.bytecode,
-      this.predicate.abi
+      this.predicate.abi,
+      transactionRequest.witnesses.length
     );
     predicate.connect(fuelProvider);
-    predicate.setData(transactionRequest.witnesses.length);
 
     // Attach missing inputs (including estimated predicate gas usage) / outputs to the request
     await predicate.provider.estimateTxDependencies(transactionRequest);
@@ -399,7 +398,8 @@ export const createPredicate = memoize(function createPredicate(
   ethAddress: string,
   provider: Provider,
   predicateBytecode: BytesLike,
-  predicateAbi: JsonAbi
+  predicateAbi: JsonAbi,
+  inputData?: any
 ): Predicate<InputValue[]> {
   const configurable = {
     SIGNER: Address.fromB256(
@@ -407,12 +407,13 @@ export const createPredicate = memoize(function createPredicate(
     ).toEvmAddress()
   };
 
-  const predicate = new Predicate(
-    arrayify(predicateBytecode),
+  const predicate = new Predicate({
+    bytecode: arrayify(predicateBytecode),
+    abi: predicateAbi,
     provider,
-    predicateAbi,
-    configurable
-  );
+    configurableConstants: configurable,
+    inputData
+  });
 
   return predicate;
 });
