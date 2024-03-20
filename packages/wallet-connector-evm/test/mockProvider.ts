@@ -26,6 +26,10 @@ interface IMockProvider {
     method: 'eth_requestAccounts';
     params: string[];
   }): Promise<string[]>;
+  request(args: {
+    method: 'wallet_requestPermissions';
+    params: string[];
+  }): Promise<string[]>;
 
   request(args: { method: 'net_version' }): Promise<number>;
   request(args: { method: 'eth_chainId'; params: string[] }): Promise<string>;
@@ -92,6 +96,16 @@ export class MockProvider extends EventEmitter implements IMockProvider {
 
     switch (method) {
       case 'eth_requestAccounts':
+        if (this.manualConfirmEnable) {
+          return new Promise((resolve, reject) => {
+            this.acceptEnable = resolve;
+            this.rejectEnable = reject;
+          }).then(() => this.accounts.map(({ address }) => address));
+        }
+        this.connected = true;
+        return this.accounts.map(({ address }) => address);
+
+      case 'wallet_requestPermissions':
         if (this.manualConfirmEnable) {
           return new Promise((resolve, reject) => {
             this.acceptEnable = resolve;

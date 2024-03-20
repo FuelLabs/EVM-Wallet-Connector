@@ -9,7 +9,6 @@ import {
 } from 'vitest';
 import path from 'path';
 import { cwd } from 'process';
-import type { Asset } from '@fuel-wallet/types';
 import {
   bn,
   Wallet,
@@ -17,7 +16,8 @@ import {
   Provider,
   ScriptTransactionRequest,
   WalletUnlocked,
-  ProviderOptions
+  ProviderOptions,
+  Asset
 } from 'fuels';
 import { launchNodeAndGetWallets } from '@fuel-ts/account/test-utils';
 import { MockProvider } from './mockProvider';
@@ -51,89 +51,55 @@ describe('EVM Wallet Connector', () => {
   const chainConfigPath = path.join(__dirname, 'chainConfig.json');
 
   beforeAll(async () => {
-    // fuelProvider = provider;
-    // stopProvider = stop;
+    //Launch test node
+    const { stop, provider } = await launchNodeAndGetWallets({
+      launchNodeOptions: {
+        args: ['--chain', chainConfigPath],
+        loggingEnabled: false
+      }
+    });
+
+    fuelProvider = provider;
+    stopProvider = stop;
   });
 
   afterAll(() => {
-    // stopProvider && stopProvider();
+    stopProvider && stopProvider();
   });
 
   beforeEach(async () => {
-    // Setting the providers once should not cause issues
     // Create the Ethereum provider
-    // ethProvider = new MockProvider();
-    // const accounts = ethProvider.getAccounts();
-    // const chainId = await fuelProvider.getChainId();
-    // const predicateAccounts = await Promise.all(
-    //   accounts.map(async (account) =>
-    //     getPredicateAddress(account, bytecode, abi)
-    //   )
-    // );
-    // ethAccount1 = accounts[0]!;
-    // ethAccount2 = accounts[1]!;
-    // predicateAccount1 = predicateAccounts[0]!;
-    // predicateAccount2 = predicateAccounts[1]!;
-    // // Class contains state, reset the state for each test
-    // connector = new EVMWalletConnector(
-    //   ethProvider,
-    //   fuelProvider
-    // );
+    ethProvider = new MockProvider();
+
+    const accounts = ethProvider.getAccounts();
+    const chainId = await fuelProvider.getChainId();
+
+    const predicateAccounts = await Promise.all(
+      accounts.map(async (account) =>
+        getPredicateAddress(account, bytecode, abi)
+      )
+    );
+
+    ethAccount1 = accounts[0]!;
+    ethAccount2 = accounts[1]!;
+
+    predicateAccount1 = predicateAccounts[0]!;
+    predicateAccount2 = predicateAccounts[1]!;
+
+    // Class contains state, reset the state for each test
+    connector = new EVMWalletConnector(ethProvider, fuelProvider);
   });
 
-  // afterEach(() => {
-  //   ethProvider.removeAllListeners();
-  // });
+  afterEach(() => {
+    ethProvider.removeAllListeners();
+  });
 
-  describe.only('connect()', () => {
-    test(
-      'connects to ethers signer',
-      async () => {
-        console.log('chainConfigPath', chainConfigPath);
+  describe('connect()', () => {
+    test('connects to ethers signer', async () => {
+      let connected = await connector.connect();
 
-        const { stop, provider } = await launchNodeAndGetWallets({
-          launchNodeOptions: {
-            args: ['--chain', chainConfigPath]
-          }
-        });
-
-        console.log('after launchNodeAndGetWallets');
-
-        ethProvider = new MockProvider();
-
-        // const accounts = ethProvider.getAccounts();
-        // const chainId = await fuelProvider.getChainId();
-
-        // const predicateAccounts = await Promise.all(
-        //   accounts.map(async (account) =>
-        //     getPredicateAddress(account, bytecode, abi)
-        //   )
-        // );
-
-        // ethAccount1 = accounts[0]!;
-        // ethAccount2 = accounts[1]!;
-
-        // predicateAccount1 = predicateAccounts[0]!;
-        // predicateAccount2 = predicateAccounts[1]!;
-
-        // Class contains state, reset the state for each test
-        // connector = new EVMWalletConnector(
-        //   ethProvider,
-        //   provider
-        // );
-
-        // console.log(1, connector);
-
-        // let connected = await connector.connect();
-
-        console.log(2);
-
-        // expect(connected).to.be.true;
-
-        stop();
-      },
-      { timeout: 18000 }
-    );
+      expect(connected).to.be.true;
+    });
   });
 
   // describe('isConnected()', () => {
