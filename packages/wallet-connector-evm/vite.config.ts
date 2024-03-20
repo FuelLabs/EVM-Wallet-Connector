@@ -13,6 +13,10 @@ export default defineConfig({
   plugins: [dts({
     include: [resolve(__dirname, 'src/')],
 })],
+define: {
+  '__dirname': __dirname,
+  '__filename': __filename,
+},
   build: {
     lib: {
       // Could also be a dictionary or array of multiple entry points

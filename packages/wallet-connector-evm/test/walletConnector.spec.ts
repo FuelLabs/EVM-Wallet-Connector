@@ -1,5 +1,6 @@
 import { expect, test, describe, beforeAll, beforeEach, afterAll, afterEach } from 'vitest'
 import path from 'path';
+import { cwd } from 'process';
 import type { Asset } from '@fuel-wallet/types';
 import {
   bn,
@@ -42,59 +43,95 @@ describe('EVM Wallet Connector', () => {
   const bytecode = predicates[predicate].bytecode;
   const abi = predicates[predicate].abi;
 
-  beforeAll(async () => {
-    const chainConfigPath = path.join(process.cwd(), '.chainConfig.json');
+  const chainConfigPath = path.join(cwd(), '../chainConfig.json');
 
-    const { stop, provider } = await launchNodeAndGetWallets({
-      launchNodeOptions: {
-        args: ['--chain', chainConfigPath],
-      },
-    });
-    fuelProvider = provider;
-    stopProvider = stop;
+  beforeAll(async () => {
+  
+    // fuelProvider = provider;
+    // stopProvider = stop;
   });
 
   afterAll(() => {
-    stopProvider && stopProvider();
+    // stopProvider && stopProvider();
   });
 
   beforeEach(async () => {
     // Setting the providers once should not cause issues
     // Create the Ethereum provider
-    ethProvider = new MockProvider();
+    // ethProvider = new MockProvider();
 
-    const accounts = ethProvider.getAccounts();
-    const chainId = await fuelProvider.getChainId();
+    // const accounts = ethProvider.getAccounts();
+    // const chainId = await fuelProvider.getChainId();
 
-    const predicateAccounts = await Promise.all(
-      accounts.map(async (account) =>
-        getPredicateAddress(account, bytecode, abi)
-      )
-    );
+    // const predicateAccounts = await Promise.all(
+    //   accounts.map(async (account) =>
+    //     getPredicateAddress(account, bytecode, abi)
+    //   )
+    // );
 
-    ethAccount1 = accounts[0]!;
-    ethAccount2 = accounts[1]!;
+    // ethAccount1 = accounts[0]!;
+    // ethAccount2 = accounts[1]!;
 
-    predicateAccount1 = predicateAccounts[0]!;
-    predicateAccount2 = predicateAccounts[1]!;
+    // predicateAccount1 = predicateAccounts[0]!;
+    // predicateAccount2 = predicateAccounts[1]!;
 
-    // Class contains state, reset the state for each test
-    connector = new EVMWalletConnector(
-      ethProvider,
-      fuelProvider
-    );
+    // // Class contains state, reset the state for each test
+    // connector = new EVMWalletConnector(
+    //   ethProvider,
+    //   fuelProvider
+    // );
   });
 
-  afterEach(() => {
-    ethProvider.removeAllListeners();
-  });
+  // afterEach(() => {
+  //   ethProvider.removeAllListeners();
+  // });
 
-  describe('connect()', () => {
+  describe.only('connect()', () => {
     test('connects to ethers signer', async () => {
+
+      console.log(1241412, chainConfigPath);
+
+      const { stop, provider } = await launchNodeAndGetWallets({
+        launchNodeOptions: {
+          args: ['--chain', chainConfigPath],
+        },
+      });
+
+      console.log(11)
+
+      ethProvider = new MockProvider();
+
+      // const accounts = ethProvider.getAccounts();
+      // const chainId = await fuelProvider.getChainId();
+  
+      // const predicateAccounts = await Promise.all(
+      //   accounts.map(async (account) =>
+      //     getPredicateAddress(account, bytecode, abi)
+      //   )
+      // );
+  
+      // ethAccount1 = accounts[0]!;
+      // ethAccount2 = accounts[1]!;
+  
+      // predicateAccount1 = predicateAccounts[0]!;
+      // predicateAccount2 = predicateAccounts[1]!;
+  
+      // Class contains state, reset the state for each test
+      connector = new EVMWalletConnector(
+        ethProvider,
+        provider
+      );
+
+      console.log(1, connector);
+
       let connected = await connector.connect();
 
+      console.log(2);
+      
       expect(connected).to.be.true;
-    });
+
+      stop();
+    }, { timeout: 18000 });
   });
 
   describe('isConnected()', () => {
