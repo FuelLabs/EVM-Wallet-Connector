@@ -127,18 +127,18 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-//   describe('accounts()', () => {
-//     test('returns the predicate accounts associated with the wallet', async () => {
-//       await connector.connect();
+  describe('accounts()', () => {
+    test('returns the predicate accounts associated with the wallet', async () => {
+      await connector.connect();
 
-//       let predicateAccounts = await connector.accounts();
-//       let acc1 = predicateAccounts[0];
-//       let acc2 = predicateAccounts[1];
+      let predicateAccounts = await connector.accounts();
+      let acc1 = predicateAccounts[0];
+      let acc2 = predicateAccounts[1];
 
-//       expect(acc1).to.be.equal(predicateAccount1);
-//       expect(acc2).to.be.equal(predicateAccount2);
-//     });
-//   });
+      expect(acc1).to.be.equal(predicateAccount1);
+      expect(acc2).to.be.equal(predicateAccount2);
+    });
+  });
 
 //   describe('currentAccount()', () => {
 //     test('returns the predicate account associated with the current signer account', async () => {
