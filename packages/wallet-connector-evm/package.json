@@ -22,16 +22,14 @@
 	"dependencies": {
 		"@ethereumjs/util": "^9.0.1",
 		"@ethersproject/bytes": "^5.7.0",
-		"@fuel-ts/account": "0.74.0",
-		"@fuel-ts/fuel-core": "^0.74.0",
-		"@fuel-wallet/sdk": "0.15.2",
-		"@fuel-wallet/types": "0.15.2",
-		"fuels": "0.74.0",
+		"@fuel-ts/account": "^0.77.0",
+		"@fuel-ts/fuel-core": "^0.77.0",
+		"fuels": "^0.77.0",
 		"json-rpc-2.0": "^1.7.0",
 		"memoizee": "^0.4.15"
 	},
 	"devDependencies": {
-		"@fuels/ts-config": "^0.1.4",
+		"@fuels/ts-config": "^0.17.0",
 		"@types/memoizee": "^0.4.11",
 		"@types/node": "^20.10.5",
 		"prettier": "^3.1.1",
