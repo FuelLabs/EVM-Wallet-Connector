@@ -31,6 +31,11 @@ interface IMockProvider {
     params: string[];
   }): Promise<string[]>;
 
+  request(args: {
+    method: 'wallet_revokePermissions';
+    params: string[];
+  }): Promise<null>;
+
   request(args: { method: 'net_version' }): Promise<number>;
   request(args: { method: 'eth_chainId'; params: string[] }): Promise<string>;
 
@@ -117,6 +122,9 @@ export class MockProvider extends EventEmitter implements IMockProvider {
 
       case 'eth_accounts':
         return this.connected ? this.getAccounts() : [];
+
+      case 'wallet_revokePermissions':
+        return null;
 
       case 'net_version':
         return this.networkVersion;
