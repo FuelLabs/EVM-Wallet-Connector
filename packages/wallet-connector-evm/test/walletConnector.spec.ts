@@ -439,11 +439,11 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-//   describe('addAssets()', () => {
-//     test('returns false', async () => {
-//       expect(await connector.addAssets([])).to.be.false;
-//     });
-//   });
+  describe('addAssets()', () => {
+    test('returns false', async () => {
+      expect(await connector.addAssets([])).to.be.false;
+    });
+  });
 
 //   describe('addAbi()', () => {
 //     test('returns false', async () => {
