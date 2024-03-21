@@ -5,12 +5,12 @@ import {
   useConnectUI,
   useWallet,
   useBalance,
-  useIsConnected,
-  useFuel
+  useIsConnected
 } from '@fuel-wallet/react';
 import './App.css';
 import { CounterContractAbi__factory } from './contracts';
 import { bn, Address, BaseAssetId } from 'fuels';
+import { useLogEvents } from './hooks/use-log-events';
 
 const COUNTER_CONTRACT_ID =
   '0x0a46aafb83b387155222893b52ed12e5a4b9d6cd06770786f2b5e4307a63b65c';
@@ -114,29 +114,6 @@ function AccountItem({ address }: { address: string }) {
   );
 }
 
-function LogEvents() {
-  const { fuel } = useFuel();
-  useEffect(() => {
-    const log = (prefix: string) => (data: any) => {
-      console.log(prefix, data);
-    };
-    const logAccounts = log('accounts');
-    const logConnection = log('connection');
-    const logCurrentAccount = log('currentAccount');
-
-    fuel.on(fuel.events.accounts, logAccounts);
-    fuel.on(fuel.events.connection, logConnection);
-    fuel.on(fuel.events.currentAccount, logCurrentAccount);
-    return () => {
-      fuel.off(fuel.events.accounts, logAccounts);
-      fuel.off(fuel.events.connection, logConnection);
-      fuel.off(fuel.events.currentAccount, logCurrentAccount);
-    };
-  }, [fuel]);
-
-  return null;
-}
-
 function ContractCounter() {
   const { wallet } = useWallet();
   const { balance } = useBalance({
@@ -144,6 +121,8 @@ function ContractCounter() {
   });
   const [counter, setCounter] = useState(0);
   const shouldShowCounter = wallet && balance?.gt(0);
+
+  useLogEvents();
 
   useEffect(() => {
     if (!shouldShowCounter) return;
@@ -213,7 +192,6 @@ export default function App() {
       </nav>
 
       <div className="flex h-full w-full">
-        <LogEvents />
         <div className="Actions">
           <button
             onClick={() => {
