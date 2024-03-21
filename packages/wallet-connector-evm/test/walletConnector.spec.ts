@@ -151,13 +151,17 @@ describe('EVM Wallet Connector', () => {
     });
 
     test('throws error when not connected', async () => {
-      await expect(() => connector.currentAccount()).rejects.toThrowError('No connected accounts');
+      await expect(() => connector.currentAccount()).rejects.toThrowError(
+        'No connected accounts'
+      );
     });
   });
 
   describe('signMessage()', () => {
     test('throws error', async () => {
-      await expect(() => connector.signMessage('address', 'message')).rejects.toThrowError('A predicate account cannot sign messages');
+      await expect(() =>
+        connector.signMessage('address', 'message')
+      ).rejects.toThrowError('A predicate account cannot sign messages');
     });
   });
 
@@ -414,10 +418,14 @@ describe('EVM Wallet Connector', () => {
       // Temporary hack here?
       await connector.accounts();
 
-      await expect(() => connector.sendTransaction(
-        predicateAccount2.replaceAll('h', 'X'),
-        transactionRequest
-      )).rejects.toThrowError(`No account found for ${predicateAccount2.replaceAll('h', 'X')}`)
+      await expect(() =>
+        connector.sendTransaction(
+          predicateAccount2.replaceAll('h', 'X'),
+          transactionRequest
+        )
+      ).rejects.toThrowError(
+        `No account found for ${predicateAccount2.replaceAll('h', 'X')}`
+      );
     });
   });
 
@@ -453,8 +461,9 @@ describe('EVM Wallet Connector', () => {
 
   describe('getAbi()', () => {
     test('throws error', async () => {
-      await expect(() => connector.getAbi('contractId')).rejects.toThrowError('Cannot get contractId ABI for a predicate')
-
+      await expect(() => connector.getAbi('contractId')).rejects.toThrowError(
+        'Cannot get contractId ABI for a predicate'
+      );
     });
   });
 
@@ -490,7 +499,6 @@ describe('EVM Wallet Connector', () => {
   describe('addNetwork()', () => {
     test('throws error', async () => {
       expect(await connector.addNetwork('')).to.be.false;
-
     });
   });
 });
