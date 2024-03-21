@@ -464,32 +464,33 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-//   describe('network()', () => {
-//     test('returns the fuel network info', async () => {
-//       let network = await connector.currentNetwork();
+  describe('network()', () => {
+    test('returns the fuel network info', async () => {
+      let network = await connector.currentNetwork();
 
-//       expect(network.chainId.toString()).to.be.equal(
-//         (await fuelProvider.getNetwork()).chainId.toString()
-//       );
-//       expect(network.url).to.be.equal(fuelProvider.url);
-//     });
-//   });
+      expect(network.chainId.toString()).to.be.equal(
+        (await fuelProvider.getNetwork()).chainId.toString()
+      );
+      expect(network.url).to.be.equal(fuelProvider.url);
+    });
+  });
 
-//   describe('networks()', () => {
-//     test('returns an array of fuel network info', async () => {
-//       let networks = await connector.networks();
-//       let network = networks.pop();
+  describe('networks()', () => {
+    test('returns an array of fuel network info', async () => {
+      let networks = await connector.networks();
+      let network = networks.pop();
 
-//       expect(network!.chainId.toString()).to.be.equal(
-//         (await connector.fuelProvider!.getNetwork()).chainId.toString()
-//       );
-//       expect(network!.url).to.be.equal(fuelProvider.url);
-//     });
-//   });
+      expect(network!.chainId.toString()).to.be.equal(
+        (await connector.fuelProvider!.getNetwork()).chainId.toString()
+      );
+      expect(network!.url).to.be.equal(fuelProvider.url);
+    });
+  });
 
-//   describe('addNetwork()', () => {
-//     test('throws error', async () => {
-//       await expect(connector.addNetwork('')).throw('Not implemented');
-//     });
-//   });
+  describe('addNetwork()', () => {
+    test('throws error', async () => {
+      expect(await connector.addNetwork('')).to.be.false;
+
+    });
+  });
 });
