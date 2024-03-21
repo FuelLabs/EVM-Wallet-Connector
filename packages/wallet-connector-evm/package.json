@@ -1,6 +1,7 @@
 {
 	"name": "@fuels/wallet-connector-evm",
 	"version": "0.0.3",
+	"type": "module",
 	"files": [
 		"dist"
 	],
