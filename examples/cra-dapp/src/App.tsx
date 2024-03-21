@@ -193,10 +193,10 @@ export default function App() {
       </nav>
 
       {/* Main */}
-      <div className="flex h-full min-w-full items-center justify-center">
-        <div id="container" className="w-[56rem] transition-all duration-200">
+      <div className="flex h-full min-w-full items-center justify-center text-gray-900 dark:text-gray-50">
+        <div id="container" className="w-[56rem]">
           <div id="grid" className="grid grid-cols-2 grid-rows-1">
-            <div id="text" className="p-8 text-gray-900 dark:text-gray-50">
+            <div id="text" className="p-8 pr-16">
               <h1 className="pb-1 text-4xl font-semibold">Metamask Demo</h1>
               <p>
                 Fuel enables developers to build integrations with any wallet.
@@ -212,14 +212,18 @@ export default function App() {
             </div>
 
             <section className="rounded bg-white shadow-sm dark:bg-gray-800">
-              <div className="p-8">
+              <div className="flex h-full flex-col items-center justify-center p-8">
+                <h2 className="mb-4 text-lg font-medium">
+                  Test the Metamask connector
+                </h2>
                 <button
+                  className="btn btn-primary"
                   onClick={() => {
                     console.log('connect');
                     connect();
                   }}
                 >
-                  {isConnecting ? 'Connecting' : 'Connect'}
+                  {isConnecting ? 'Connecting' : 'Connect Metamask'}
                 </button>
                 {isConnected && (
                   <button onClick={() => disconnect()}>Disconnect</button>
