@@ -29,5 +29,9 @@ body {
 }
 
 .btn-primary {
-  @apply bg-emerald-400 text-white hover:bg-emerald-500;
+  @apply bg-emerald-400 text-white hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400;
+}
+
+.btn-primary:disabled {
+  @apply cursor-not-allowed bg-gray-400 text-white dark:bg-gray-600;
 }
