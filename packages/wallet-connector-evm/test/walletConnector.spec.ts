@@ -445,25 +445,24 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-//   describe('addAbi()', () => {
-//     test('returns false', async () => {
-//       expect(await connector.addAbi({})).to.be.false;
-//     });
-//   });
+  describe('addAbi()', () => {
+    test('returns false', async () => {
+      expect(await connector.addAbi({})).to.be.false;
+    });
+  });
 
-//   describe('getAbi()', () => {
-//     test('throws error', async () => {
-//       await expect(connector.getAbi('contractId')).throw(
-//         'Cannot get contractId ABI for a predicate'
-//       );
-//     });
-//   });
+  describe('getAbi()', () => {
+    test('throws error', async () => {
+      await expect(() => connector.getAbi('contractId')).rejects.toThrowError('Cannot get contractId ABI for a predicate')
 
-//   describe('hasAbi()', () => {
-//     test('returns false', async () => {
-//       expect(await connector.hasAbi('contractId')).to.be.false;
-//     });
-//   });
+    });
+  });
+
+  describe('hasAbi()', () => {
+    test('returns false', async () => {
+      expect(await connector.hasAbi('contractId')).to.be.false;
+    });
+  });
 
 //   describe('network()', () => {
 //     test('returns the fuel network info', async () => {
