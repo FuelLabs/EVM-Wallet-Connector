@@ -229,8 +229,8 @@ export class EVMWalletConnector extends FuelConnector {
       account.ethAccount,
       fuelProvider,
       this.predicate.bytecode,
-      this.predicate.abi,
-      transactionRequest.witnesses.length
+      this.predicate.abi, 
+      [transactionRequest.witnesses.length]
     );
     predicate.connect(fuelProvider);
 
@@ -399,7 +399,7 @@ export const createPredicate = memoize(function createPredicate(
   provider: Provider,
   predicateBytecode: BytesLike,
   predicateAbi: JsonAbi,
-  inputData?: any
+  inputData?: any[]
 ): Predicate<InputValue[]> {
   const configurable = {
     SIGNER: Address.fromB256(
