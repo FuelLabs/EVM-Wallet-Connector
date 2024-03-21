@@ -229,7 +229,7 @@ export class EVMWalletConnector extends FuelConnector {
       account.ethAccount,
       fuelProvider,
       this.predicate.bytecode,
-      this.predicate.abi, 
+      this.predicate.abi,
       [transactionRequest.witnesses.length]
     );
     predicate.connect(fuelProvider);
