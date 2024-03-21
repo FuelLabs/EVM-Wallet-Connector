@@ -421,11 +421,11 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-//   describe('assets()', () => {
-//     test('returns an empty array', async () => {
-//       expect(await connector.assets()).to.deep.equal([]);
-//     });
-//   });
+  describe('assets()', () => {
+    test('returns an empty array', async () => {
+      expect(await connector.assets()).to.deep.equal([]);
+    });
+  });
 
 //   describe('addAsset()', () => {
 //     test('returns false', async () => {
