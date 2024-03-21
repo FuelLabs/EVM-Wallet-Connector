@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { useEffect, useState } from 'react';
 import {
   useAccounts,
@@ -181,7 +180,7 @@ function ContractCounter() {
   );
 }
 
-function App() {
+export default function App() {
   const { connect, error, isError, theme, setTheme, isConnecting } =
     useConnectUI();
   const { disconnect } = useDisconnect();
@@ -195,63 +194,78 @@ function App() {
   }, [refetch]);
 
   return (
-    <div className="App" data-theme={theme}>
-      <LogEvents />
-      <div className="Actions">
+    <main
+      data-theme={theme}
+      className="flex h-screen flex-col bg-gray-50 dark:bg-gray-800"
+    >
+      <nav id="nav" className="flex items-center justify-between px-12 py-6">
+        <img
+          src={lightTheme ? './logo_black.png' : './logo_white.png'}
+          alt="Fuel Logo"
+          className="w-32"
+        />
         <button
-          onClick={() => {
-            console.log('connect');
-            connect();
-          }}
+          onClick={() => setTheme(lightTheme ? 'dark' : 'light')}
+          className="size-12 rounded-full bg-gray-100 dark:bg-gray-700"
         >
-          {isConnecting ? 'Connecting' : 'Connect'}
-        </button>
-        {isConnected && (
-          <button onClick={() => disconnect()}>Disconnect</button>
-        )}
-        <button onClick={() => setTheme(lightTheme ? 'dark' : 'light')}>
           {lightTheme ? '🌙' : '☀️'}
         </button>
-      </div>
-      <div className="Info">
-        {isConnected && (
-          <>
-            <p>
-              The connected accounts below are the predicate accounts on Fuel
-              for each of the connected EVM wallet accounts.
-            </p>
-            <p>
-              You can use an EVM wallet account to send transactions from its
-              corresponding predicate account.
-            </p>
-            <p>
-              Additional accounts can be connected via the EVM wallet extension.
-            </p>
-          </>
-        )}
-      </div>
-      {isError && <p className="Error">{error?.message}</p>}
-      {isConnected && (
-        <div className="Accounts">
-          <h3>Connected accounts</h3>
-          {accounts?.map((account) => (
-            <AccountItem key={account} address={account} />
-          ))}
+      </nav>
+
+      <div className="flex h-full w-full">
+        <LogEvents />
+        <div className="Actions">
+          <button
+            onClick={() => {
+              console.log('connect');
+              connect();
+            }}
+          >
+            {isConnecting ? 'Connecting' : 'Connect'}
+          </button>
+          {isConnected && (
+            <button onClick={() => disconnect()}>Disconnect</button>
+          )}
         </div>
-      )}
-      <ContractCounter />
-      <div className="BottomInfo">
+        <div className="Info">
+          {isConnected && (
+            <>
+              <p>
+                The connected accounts below are the predicate accounts on Fuel
+                for each of the connected EVM wallet accounts.
+              </p>
+              <p>
+                You can use an EVM wallet account to send transactions from its
+                corresponding predicate account.
+              </p>
+              <p>
+                Additional accounts can be connected via the EVM wallet
+                extension.
+              </p>
+            </>
+          )}
+        </div>
+        {isError && <p className="Error">{error?.message}</p>}
         {isConnected && (
-          <>
-            <p>
-              The counter contract is deployed to the address below:{' '}
-              <b>{COUNTER_CONTRACT_ID}</b>.
-            </p>
-          </>
+          <div className="Accounts">
+            <h3>Connected accounts</h3>
+            {accounts?.map((account) => (
+              <AccountItem key={account} address={account} />
+            ))}
+          </div>
         )}
+        <ContractCounter />
+        <div className="BottomInfo">
+          {isConnected && (
+            <>
+              <p>
+                The counter contract is deployed to the address below:{' '}
+                <b>{COUNTER_CONTRACT_ID}</b>.
+              </p>
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
-
-export default App;
