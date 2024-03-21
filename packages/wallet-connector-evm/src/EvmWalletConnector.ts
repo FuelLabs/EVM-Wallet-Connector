@@ -45,6 +45,7 @@ export class EVMWalletConnector extends FuelConnector {
   private setupLock: boolean = false;
   private _currentAccount: string | null = null;
   private config: Required<EVMWalletConnectorConfig>;
+  private _ethereumEvents: number = 0;
 
   // metadata placeholder
   metadata: ConnectorMetadata = {
@@ -65,16 +66,23 @@ export class EVMWalletConnector extends FuelConnector {
       fuelProvider: 'https://beta-5.fuel.network/graphql',
       ethProvider: config.ethProvider || (window as any).ethereum
     });
+    this.setupEthereumEvents();
+  }
+
+  setupEthereumEvents() {
+    this._ethereumEvents = Number(setInterval(() => {
+      if (WINDOW.ethereum) {
+        clearInterval(this._ethereumEvents);
+        window.dispatchEvent(
+          new CustomEvent('FuelConnector', { detail: this }),
+        );
+      }
+    }, 500));
   }
 
   async getLazyEthereum() {
     if (this.config.ethProvider) return this.config.ethProvider;
-    if (WINDOW.ethereum) return WINDOW.ethereum;
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(WINDOW.ethereum);
-      }, 500);
-    });
+    return WINDOW.ethereum;
   }
 
   /**
