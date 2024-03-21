@@ -32,7 +32,7 @@ body * {
   transition: box-shadow 0.2s ease-in-out;
   cursor: pointer;
 } */
-
+/* 
 button:active {
   box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 0.2);
 }
@@ -121,4 +121,4 @@ button:disabled {
     margin-left: 0px;
     margin-top: 8px;
   }
-}
+} */

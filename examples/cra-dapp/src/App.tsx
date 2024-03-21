@@ -175,8 +175,9 @@ export default function App() {
   return (
     <main
       data-theme={theme}
-      className="flex h-screen flex-col bg-gray-50 dark:bg-gray-800"
+      className="flex h-screen flex-col bg-gray-50 dark:bg-gray-900"
     >
+      {/* Top */}
       <nav id="nav" className="flex items-center justify-between px-12 py-6">
         <img
           src={lightTheme ? './logo_black.png' : './logo_white.png'}
@@ -185,44 +186,64 @@ export default function App() {
         />
         <button
           onClick={() => setTheme(lightTheme ? 'dark' : 'light')}
-          className="size-12 rounded-full bg-gray-100 dark:bg-gray-700"
+          className="size-12 rounded-full bg-gray-100 dark:bg-gray-800"
         >
           {lightTheme ? '🌙' : '☀️'}
         </button>
       </nav>
 
-      <div className="flex h-full w-full">
-        <div className="Actions">
-          <button
-            onClick={() => {
-              console.log('connect');
-              connect();
-            }}
-          >
-            {isConnecting ? 'Connecting' : 'Connect'}
-          </button>
-          {isConnected && (
-            <button onClick={() => disconnect()}>Disconnect</button>
-          )}
+      {/* Main */}
+      <div className="flex h-full min-w-full items-center justify-center">
+        <div id="container" className="w-[56rem] transition-all duration-200">
+          <div id="grid" className="grid grid-cols-2 grid-rows-1">
+            <div id="text" className="p-8 text-gray-900 dark:text-gray-50">
+              <h1 className="pb-1 text-4xl font-semibold">Metamask Demo</h1>
+              <p>
+                Fuel enables developers to build integrations with any wallet.
+              </p>
+              <br />
+              <ul className="list-inside list-disc">
+                <li>Reduce friction for users</li>
+                <li>Build using any signature scheme</li>
+                <li>Use predicates, a new type of stateless smart contract</li>
+              </ul>
+              <br />
+              <a href="#">Build your own wallet integration</a>
+            </div>
+
+            <section className="rounded bg-white shadow-sm dark:bg-gray-800">
+              <div className="p-8">
+                <button
+                  onClick={() => {
+                    console.log('connect');
+                    connect();
+                  }}
+                >
+                  {isConnecting ? 'Connecting' : 'Connect'}
+                </button>
+                {isConnected && (
+                  <button onClick={() => disconnect()}>Disconnect</button>
+                )}
+              </div>
+            </section>
+          </div>
         </div>
-        <div className="Info">
-          {isConnected && (
-            <>
-              <p>
-                The connected accounts below are the predicate accounts on Fuel
-                for each of the connected EVM wallet accounts.
-              </p>
-              <p>
-                You can use an EVM wallet account to send transactions from its
-                corresponding predicate account.
-              </p>
-              <p>
-                Additional accounts can be connected via the EVM wallet
-                extension.
-              </p>
-            </>
-          )}
-        </div>
+
+        {isConnected && (
+          <div className="Info">
+            <p>
+              The connected accounts below are the predicate accounts on Fuel
+              for each of the connected EVM wallet accounts.
+            </p>
+            <p>
+              You can use an EVM wallet account to send transactions from its
+              corresponding predicate account.
+            </p>
+            <p>
+              Additional accounts can be connected via the EVM wallet extension.
+            </p>
+          </div>
+        )}
         {isError && <p className="Error">{error?.message}</p>}
         {isConnected && (
           <div className="Accounts">
