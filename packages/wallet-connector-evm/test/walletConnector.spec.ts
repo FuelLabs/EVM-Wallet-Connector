@@ -343,94 +343,94 @@ describe('EVM Wallet Connector', () => {
       );
     });
 
-//     test('transfer when a different valid signer is passed in', async () => {
-//       let predicate = await createPredicate(
-//         ethAccount2,
-//         fuelProvider,
-//         bytecode,
-//         abi
-//       );
+    test('transfer when a different valid signer is passed in', async () => {
+      let predicate = await createPredicate(
+        ethAccount2,
+        fuelProvider,
+        bytecode,
+        abi
+      );
 
-//       const fundingWallet = new WalletUnlocked('0x01', fuelProvider);
+      const fundingWallet = new WalletUnlocked('0x01', fuelProvider);
 
-//       // Transfer base asset coins to predicate
-//       await fundingWallet
-//         .transfer(predicate.address, 1_000_000, BaseAssetId, {
-//           gasLimit: 10000,
-//           gasPrice: 1
-//         })
-//         .then((resp) => resp.wait());
-//       // Transfer alt asset coins to predicate
-//       await fundingWallet
-//         .transfer(predicate.address, 1_000_000, ALT_ASSET_ID, {
-//           gasLimit: 10000,
-//           gasPrice: 1
-//         })
-//         .then((resp) => resp.wait());
+      // Transfer base asset coins to predicate
+      await fundingWallet
+        .transfer(predicate.address, 1_000_000, BaseAssetId, {
+          gasLimit: 10000,
+          gasPrice: 1
+        })
+        .then((resp) => resp.wait());
+      // Transfer alt asset coins to predicate
+      await fundingWallet
+        .transfer(predicate.address, 1_000_000, ALT_ASSET_ID, {
+          gasLimit: 10000,
+          gasPrice: 1
+        })
+        .then((resp) => resp.wait());
 
-//       // Check predicate balances
-//       const predicateETHBalanceInitial = await predicate.getBalance();
-//       const predicateAltBalanceInitial =
-//         await predicate.getBalance(ALT_ASSET_ID);
+      // Check predicate balances
+      const predicateETHBalanceInitial = await predicate.getBalance();
+      const predicateAltBalanceInitial =
+        await predicate.getBalance(ALT_ASSET_ID);
 
-//       // Check predicate has the balance required
-//       expect(predicateETHBalanceInitial.gte(1000000));
-//       expect(predicateAltBalanceInitial.gte(1000000));
+      // Check predicate has the balance required
+      expect(predicateETHBalanceInitial.gte(1000000));
+      expect(predicateAltBalanceInitial.gte(1000000));
 
-//       // Amount to transfer
-//       const amountToTransfer = 10;
+      // Amount to transfer
+      const amountToTransfer = 10;
 
-//       // Create a recipient Wallet
-//       const recipientWallet = Wallet.generate({ provider: fuelProvider });
-//       const recipientBalanceInitial =
-//         await recipientWallet.getBalance(ALT_ASSET_ID);
+      // Create a recipient Wallet
+      const recipientWallet = Wallet.generate({ provider: fuelProvider });
+      const recipientBalanceInitial =
+        await recipientWallet.getBalance(ALT_ASSET_ID);
 
-//       // Create transfer from predicate to recipient
-//       const transactionRequest = new ScriptTransactionRequest({
-//         gasLimit: 10000,
-//         gasPrice: 1
-//       });
-//       transactionRequest.addCoinOutput(
-//         recipientWallet.address,
-//         amountToTransfer,
-//         ALT_ASSET_ID
-//       );
+      // Create transfer from predicate to recipient
+      const transactionRequest = new ScriptTransactionRequest({
+        gasLimit: 10000,
+        gasPrice: 1
+      });
+      transactionRequest.addCoinOutput(
+        recipientWallet.address,
+        amountToTransfer,
+        ALT_ASSET_ID
+      );
 
-//       // fund transaction
-//       const resources = await predicate.getResourcesToSpend([
-//         {
-//           assetId: BaseAssetId,
-//           amount: bn(1_000_000)
-//         },
-//         {
-//           assetId: ALT_ASSET_ID,
-//           amount: bn(1_000_000)
-//         }
-//       ]);
-//       transactionRequest.addResources(resources);
+      // fund transaction
+      const resources = await predicate.getResourcesToSpend([
+        {
+          assetId: BaseAssetId,
+          amount: bn(1_000_000)
+        },
+        {
+          assetId: ALT_ASSET_ID,
+          amount: bn(1_000_000)
+        }
+      ]);
+      transactionRequest.addResources(resources);
 
-//       // Connect ETH account
-//       await connector.connect();
+      // Connect ETH account
+      await connector.connect();
 
-//       // TODO: The user accounts mapping must be populated in order to check if the account is valid
-//       // Temporary hack here?
-//       await connector.accounts();
+      // TODO: The user accounts mapping must be populated in order to check if the account is valid
+      // Temporary hack here?
+      await connector.accounts();
 
-//       // Send transaction using EvmWalletConnector
-//       await connector.sendTransaction(predicateAccount2, transactionRequest);
+      // Send transaction using EvmWalletConnector
+      await connector.sendTransaction(predicateAccount2, transactionRequest);
 
-//       // Check balances are correct
-//       const predicateAltBalanceFinal = await predicate.getBalance(ALT_ASSET_ID);
-//       const recipientBalanceFinal =
-//         await recipientWallet.getBalance(ALT_ASSET_ID);
+      // Check balances are correct
+      const predicateAltBalanceFinal = await predicate.getBalance(ALT_ASSET_ID);
+      const recipientBalanceFinal =
+        await recipientWallet.getBalance(ALT_ASSET_ID);
 
-//       expect(predicateAltBalanceFinal.toString()).eq(
-//         predicateAltBalanceInitial.sub(amountToTransfer).toString()
-//       );
-//       expect(recipientBalanceFinal.toString()).eq(
-//         recipientBalanceInitial.add(amountToTransfer).toString()
-//       );
-//     });
+      expect(predicateAltBalanceFinal.toString()).eq(
+        predicateAltBalanceInitial.sub(amountToTransfer).toString()
+      );
+      expect(recipientBalanceFinal.toString()).eq(
+        recipientBalanceInitial.add(amountToTransfer).toString()
+      );
+    });
 
 //     test('errors when an invalid signer is passed in', async () => {
 //       let predicate = await createPredicate(
