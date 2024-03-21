@@ -1,176 +1,22 @@
-import { useEffect, useState } from 'react';
 import {
   useAccounts,
   useDisconnect,
   useConnectUI,
-  useWallet,
-  useBalance,
   useIsConnected
 } from '@fuel-wallet/react';
-import './App.css';
-import { CounterContractAbi__factory } from './contracts';
-import { bn, Address, BaseAssetId } from 'fuels';
-import { useLogEvents } from './hooks/use-log-events';
 
-const COUNTER_CONTRACT_ID =
-  '0x0a46aafb83b387155222893b52ed12e5a4b9d6cd06770786f2b5e4307a63b65c';
-const DEFAULT_ADDRESS = Address.fromRandom().toString();
-const DEFAULT_AMOUNT = bn.parseUnits('0.001');
-
-function AccountItem({ address }: { address: string }) {
-  const [isLoading, setLoading] = useState(false);
-  const [isLoadingCall, setLoadingCall] = useState(false);
-  const { balance, refetch } = useBalance({
-    address
-  });
-  const { wallet } = useWallet(address);
-  const hasBalance = balance && balance.gte(DEFAULT_AMOUNT);
-
-  useEffect(() => {
-    const interval = setInterval(() => refetch(), 5000);
-    return () => clearInterval(interval);
-  }, [refetch]);
-
-  async function handleTransfer() {
-    setLoading(true);
-    try {
-      const receiverAddress = prompt('Receiver address', DEFAULT_ADDRESS);
-      const receiver = Address.fromString(receiverAddress || DEFAULT_ADDRESS);
-      const resp = await wallet?.transfer(
-        receiver,
-        DEFAULT_AMOUNT,
-        BaseAssetId,
-        {
-          gasPrice: 1,
-          gasLimit: 10_000
-        }
-      );
-      const result = await resp?.waitForResult();
-      console.log(result?.status);
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function increment() {
-    if (wallet) {
-      setLoadingCall(true);
-      const contract = CounterContractAbi__factory.connect(
-        COUNTER_CONTRACT_ID,
-        wallet
-      );
-      try {
-        await contract.functions
-          .increment()
-          .txParams({ gasPrice: 1, gasLimit: 100_000 })
-          .call();
-      } catch (err) {
-        console.log('error sending transaction...', err);
-      } finally {
-        setLoadingCall(false);
-      }
-    }
-  }
-
-  return (
-    <div className="AccountItem">
-      <div className="AccountColumns">
-        <span>
-          <b>Account:</b> {address}{' '}
-        </span>
-        <span>
-          <b>Balance:</b> {balance?.format() || '0'} ETH
-        </span>
-      </div>
-      <div className="accountActions">
-        {!hasBalance && (
-          <a
-            href={`https://faucet-beta-5.fuel.network/?address=${address}`}
-            target="_blank"
-          >
-            <button>Get some coins</button>
-          </a>
-        )}
-        <button
-          onClick={() => increment()}
-          disabled={isLoadingCall || !hasBalance}
-        >
-          {isLoadingCall
-            ? 'Incrementing...'
-            : 'Increment the counter on a contract'}
-        </button>
-        <button
-          onClick={() => handleTransfer()}
-          disabled={isLoading || !hasBalance}
-        >
-          {isLoading
-            ? 'Transferring...'
-            : `Transfer ${DEFAULT_AMOUNT.format()} ETH`}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ContractCounter() {
-  const { wallet } = useWallet();
-  const { balance } = useBalance({
-    address: wallet?.address.toString()
-  });
-  const [counter, setCounter] = useState(0);
-  const shouldShowCounter = wallet && balance?.gt(0);
-
-  useLogEvents();
-
-  useEffect(() => {
-    if (!shouldShowCounter) return;
-    getCount();
-    const interval = setInterval(() => getCount(), 5000);
-    return () => clearInterval(interval);
-  }, [shouldShowCounter]);
-
-  const getCount = async () => {
-    const counterContract = CounterContractAbi__factory.connect(
-      COUNTER_CONTRACT_ID,
-      wallet!
-    );
-    try {
-      const { value } = await counterContract.functions
-        .count()
-        .txParams({
-          gasPrice: 1,
-          gasLimit: 100_000
-        })
-        .simulate();
-      setCounter(value.toNumber());
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  if (!shouldShowCounter) return null;
-
-  return (
-    <div className="Counter">
-      <h3>Counter: {counter}</h3>
-    </div>
-  );
-}
+import Counter, { COUNTER_CONTRACT_ID } from './components/counter';
+import ConnectedAccount from './components/account';
+import Balance from './components/balance';
+import Transfer from './components/transfer';
 
 export default function App() {
-  const { connect, error, isError, theme, setTheme, isConnecting } =
-    useConnectUI();
+  const { connect, theme, setTheme, isConnecting } = useConnectUI();
   const { disconnect } = useDisconnect();
-  const { isConnected, refetch } = useIsConnected();
+  const { isConnected } = useIsConnected();
   const { accounts } = useAccounts();
-  const lightTheme = theme === 'light';
 
-  useEffect(() => {
-    const interval = setInterval(() => refetch(), 1000);
-    return () => clearInterval(interval);
-  }, [refetch]);
+  const lightTheme = theme === 'light';
 
   return (
     <main
@@ -208,67 +54,85 @@ export default function App() {
                 <li>Use predicates, a new type of stateless smart contract</li>
               </ul>
               <br />
-              <a href="#">Build your own wallet integration</a>
+              <a href="#" className="text-emerald-500 hover:underline">
+                Build your own wallet integration
+              </a>
             </div>
 
-            <section className="rounded bg-white shadow-sm dark:bg-gray-800">
-              <div className="flex h-full flex-col items-center justify-center p-8">
-                <h2 className="mb-4 text-lg font-medium">
-                  Test the Metamask connector
-                </h2>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    console.log('connect');
-                    connect();
-                  }}
-                >
-                  {isConnecting ? 'Connecting' : 'Connect Metamask'}
-                </button>
-                {isConnected && (
-                  <button onClick={() => disconnect()}>Disconnect</button>
-                )}
-              </div>
-            </section>
-          </div>
-        </div>
+            <div className="rounded bg-white shadow-sm dark:bg-gray-800">
+              {!isConnected && (
+                <section className="flex h-full flex-col items-center justify-center p-8">
+                  <h2 className="mb-4 text-lg font-medium">
+                    Test the Metamask connector
+                  </h2>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => {
+                      console.log('connect');
+                      connect();
+                    }}
+                  >
+                    {isConnecting ? 'Connecting' : 'Connect Metamask'}
+                  </button>
+                  {isConnected && (
+                    <button onClick={() => disconnect()}>Disconnect</button>
+                  )}
+                </section>
+              )}
 
-        {isConnected && (
-          <div className="Info">
-            <p>
-              The connected accounts below are the predicate accounts on Fuel
-              for each of the connected EVM wallet accounts.
-            </p>
-            <p>
-              You can use an EVM wallet account to send transactions from its
-              corresponding predicate account.
-            </p>
-            <p>
-              Additional accounts can be connected via the EVM wallet extension.
-            </p>
+              {isConnected && (
+                <section className="space-y-3 p-8">
+                  <ConnectedAccount />
+                  <Balance />
+                  <Counter address={accounts[0]} />
+                  <Transfer address={accounts[0]} />
+                </section>
+              )}
+            </div>
           </div>
-        )}
-        {isError && <p className="Error">{error?.message}</p>}
-        {isConnected && (
-          <div className="Accounts">
-            <h3>Connected accounts</h3>
-            {accounts?.map((account) => (
-              <AccountItem key={account} address={account} />
-            ))}
-          </div>
-        )}
-        <ContractCounter />
-        <div className="BottomInfo">
-          {isConnected && (
-            <>
+          <div className="mt-10 text-center text-xs text-gray-500 dark:text-gray-400">
+            {isConnected && (
               <p>
-                The counter contract is deployed to the address below:{' '}
-                <b>{COUNTER_CONTRACT_ID}</b>.
+                The counter contract is deployed to the address below:
+                <br />
+                <code>{COUNTER_CONTRACT_ID}</code>.
               </p>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </main>
   );
+}
+
+{
+  /* {isError && <p className="Error">{error?.message}</p>} */
+}
+
+{
+  /* <div className="Info">
+<p>
+  The connected accounts below are the predicate accounts on
+  Fuel for each of the connected EVM wallet accounts.
+</p>
+<p>
+  You can use an EVM wallet account to send transactions from
+  its corresponding predicate account.
+</p>
+<p>
+  Additional accounts can be connected via the EVM wallet
+  extension.
+</p>
+</div> */
+}
+
+{
+  /* {isConnected && (
+                <div className="Accounts">
+                  <h3>Connected accounts</h3>
+                  {accounts?.map((account) => (
+                    <AccountItem key={account} address={account} />
+                  ))}
+                </div>
+              )} */
 }
