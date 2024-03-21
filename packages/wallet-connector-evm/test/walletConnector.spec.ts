@@ -427,17 +427,17 @@ describe('EVM Wallet Connector', () => {
     });
   });
 
-//   describe('addAsset()', () => {
-//     test('returns false', async () => {
-//       const asset: Asset = {
-//         name: '',
-//         symbol: '',
-//         icon: '',
-//         networks: []
-//       };
-//       expect(await connector.addAsset(asset)).to.be.false;
-//     });
-//   });
+  describe('addAsset()', () => {
+    test('returns false', async () => {
+      const asset: Asset = {
+        name: '',
+        symbol: '',
+        icon: '',
+        networks: []
+      };
+      expect(await connector.addAsset(asset)).to.be.false;
+    });
+  });
 
 //   describe('addAssets()', () => {
 //     test('returns false', async () => {
