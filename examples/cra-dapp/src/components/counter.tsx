@@ -1,9 +1,10 @@
 import { useBalance, useWallet } from '@fuel-wallet/react';
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useLogEvents } from '../hooks/use-log-events';
 import { CounterContractAbi__factory } from '../contracts';
 import { DEFAULT_AMOUNT } from './balance';
 import Feature from './feature';
+import Button from './button';
 
 export const COUNTER_CONTRACT_ID =
   '0x0a46aafb83b387155222893b52ed12e5a4b9d6cd06770786f2b5e4307a63b65c';
@@ -36,13 +37,24 @@ export default function ContractCounter(props: Props) {
   return (
     <Feature title="Counter contract">
       <code>{counter}</code>
-      <button
-        className="btn btn-primary"
-        onClick={() => increment()}
-        disabled={isLoading || !hasBalance}
-      >
-        {isLoading ? 'Incrementing...' : 'Increment '}
-      </button>
+      <div className="space-x-2">
+        <Button
+          color="secondary"
+          onClick={() =>
+            alert(`The counter contract is deployed at ${COUNTER_CONTRACT_ID}`)
+          }
+        >
+          See Address
+        </Button>
+        <Button
+          onClick={increment}
+          disabled={isLoading || !hasBalance}
+          loading={isLoading}
+          loadingText="Incrementing..."
+        >
+          Increment
+        </Button>
+      </div>
     </Feature>
   );
 
@@ -71,7 +83,7 @@ export default function ContractCounter(props: Props) {
 
     const counterContract = CounterContractAbi__factory.connect(
       COUNTER_CONTRACT_ID,
-      wallet!
+      wallet
     );
     try {
       const { value } = await counterContract.functions
@@ -86,4 +98,12 @@ export default function ContractCounter(props: Props) {
       console.error(error);
     }
   }
+}
+
+{
+  /* <p className="mt-2 text-sm text-zinc-400/80">
+        The counter contract is deployed to:
+        <br />
+        <code className="text-xs">{COUNTER_CONTRACT_ID}</code>.
+      </p> */
 }

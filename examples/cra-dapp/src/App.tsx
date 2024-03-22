@@ -5,6 +5,7 @@ import Counter, { COUNTER_CONTRACT_ID } from './components/counter';
 import Account from './components/account';
 import Balance from './components/balance';
 import Transfer from './components/transfer';
+import Button from './components/button';
 
 export default function App() {
   const { connect, isConnecting } = useConnectUI();
@@ -19,14 +20,14 @@ export default function App() {
     <main data-theme="dark" className="flex h-screen flex-col dark:bg-black">
       {/* Top */}
       <nav id="nav" className="flex items-center justify-center p-3">
-        <img src="./logo_white.png" alt="Fuel Logo" className="w-32" />
+        <img src="./logo_white.png" alt="Fuel Logo" className="w-[124px]" />
       </nav>
 
       {/* Main */}
       <div className="flex h-full min-w-full items-center justify-center dark:text-zinc-50/90">
         <div
           id="container"
-          className="texture mb-16 w-full max-w-5xl rounded-xl border p-1.5 drop-shadow-xl dark:border-zinc-600/40 dark:bg-gradient-to-t dark:from-zinc-950 dark:to-zinc-900"
+          className="mb-16 w-full max-w-5xl rounded-xl border p-1.5 drop-shadow-xl dark:border-zinc-600/30 dark:bg-gradient-to-t dark:from-zinc-950 dark:to-zinc-900"
         >
           <div id="grid" className="grid grid-cols-7 grid-rows-1 gap-12">
             <div id="text" className="col-span-3 px-10 py-12">
@@ -43,23 +44,27 @@ export default function App() {
               </ul>
               <a
                 href="#"
-                className="block pt-2 text-emerald-500 hover:underline"
+                className="block pt-2 text-green-500/80 transition-colors hover:text-green-500"
               >
                 Build your own wallet integration
               </a>
             </div>
 
-            <div className="col-span-4 rounded-lg border drop-shadow-xl dark:border-zinc-600/60 dark:bg-gradient-to-t dark:from-zinc-950 dark:to-zinc-900">
+            <div className="col-span-4 rounded-lg border drop-shadow-xl dark:border-zinc-600/50 dark:bg-gradient-to-t dark:from-zinc-900 dark:to-zinc-900/75">
               {!isConnected && (
                 <section className="flex h-full flex-col items-center justify-center px-10 py-16">
-                  <button className="btn btn-primary" onClick={connect}>
-                    {isConnecting ? 'Connecting' : 'Connect Metamask'}
-                  </button>
+                  <Button
+                    onClick={connect}
+                    loading={isConnecting}
+                    loadingText="Connecting"
+                  >
+                    Connect Metamask
+                  </Button>
                 </section>
               )}
 
               {isConnected && (
-                <section className="flex h-full flex-col justify-center space-y-3 px-10 py-16">
+                <section className="flex h-full flex-col justify-center space-y-6 px-10 py-16">
                   <Account address={accounts[0]} />
                   <Balance address={accounts[0]} />
                   <Counter address={accounts[0]} />

@@ -3,6 +3,7 @@ import { useWallet, useBalance } from '@fuel-wallet/react';
 import { Address, BaseAssetId } from 'fuels';
 import { DEFAULT_AMOUNT } from './balance';
 import Feature from './feature';
+import Button from './button';
 
 const DEFAULT_ADDRESS = Address.fromRandom().toString();
 
@@ -33,15 +34,15 @@ export default function Transfer(props: Props) {
         className="-ml-2 mr-2 mt-2 w-2/3 shrink basis-2/3 rounded-md p-2 font-mono outline-none dark:bg-gray-800"
       />
 
-      <button
+      <Button
         onClick={handleTransfer}
         disabled={isLoading || !hasBalance}
-        className="btn btn-primary mt-2 shrink-0"
+        className="mt-2 shrink-0"
+        loading={isLoading}
+        loadingText="Transferring..."
       >
-        {isLoading
-          ? 'Transferring...'
-          : `Transfer ${DEFAULT_AMOUNT.format()} ETH`}
-      </button>
+        {`Transfer ${DEFAULT_AMOUNT.format()} ETH`}
+      </Button>
     </Feature>
   );
 

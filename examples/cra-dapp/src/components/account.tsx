@@ -1,4 +1,5 @@
 import { useDisconnect } from '@fuel-wallet/react';
+import Button from './button';
 import Feature from './feature';
 
 type Props = { address: string };
@@ -11,9 +12,9 @@ export default function ConnectedAccount(props: Props) {
   return (
     <Feature title="Connected account">
       <code>{truncAddressMiddle(address)}</code>
-      <button className="btn btn-primary" onClick={() => disconnect()}>
+      <Button onClick={() => disconnect()} loadingText="Disconnecting...">
         Disconnect
-      </button>
+      </Button>
     </Feature>
   );
 }

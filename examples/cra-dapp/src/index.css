@@ -25,13 +25,17 @@ body {
 }
 
 .btn {
-  @apply rounded-sm px-4 py-2 font-semibold transition-all duration-200;
+  @apply rounded-md px-6 py-2.5 font-mono text-sm font-medium transition-all duration-200;
 }
 
 .btn-primary {
-  @apply bg-emerald-400 text-white hover:bg-emerald-500 dark:bg-emerald-500 dark:hover:bg-emerald-400;
+  @apply border border-green-400/10 bg-green-900/50 text-green-400 hover:border-green-400/20 hover:bg-green-900/60;
+}
+
+.btn-secondary {
+  @apply border border-zinc-400/20 bg-zinc-950 text-zinc-400 hover:border-zinc-400/25;
 }
 
 .btn-primary:disabled {
-  @apply cursor-not-allowed bg-gray-400 text-white dark:bg-gray-600;
+  @apply cursor-not-allowed border-indigo-400/10 bg-indigo-950 text-indigo-400;
 }

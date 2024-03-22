@@ -1,6 +1,7 @@
 import { useBalance, useWallet } from '@fuel-wallet/react';
 import { bn } from 'fuels';
 import { useEffect } from 'react';
+import Button from './button';
 import Feature from './feature';
 
 export const DEFAULT_AMOUNT = bn.parseUnits('0.001');
@@ -32,11 +33,7 @@ export default function Balance(props: Props) {
           Get coins
         </a>
       )}
-      {hasBalance && (
-        <button className="btn btn-primary" disabled>
-          Get coins
-        </button>
-      )}
+      {hasBalance && <Button disabled>Get coins</Button>}
     </Feature>
   );
 }

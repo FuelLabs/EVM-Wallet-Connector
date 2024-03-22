@@ -35,6 +35,9 @@ importers:
       '@types/react-dom':
         specifier: ^18.2.18
         version: 18.2.19
+      clsx:
+        specifier: 2.1.0
+        version: 2.1.0
       crypto-browserify:
         specifier: ^3.12.0
         version: 3.12.0
@@ -5176,6 +5179,11 @@ packages:
       is-plain-object: 2.0.4
       kind-of: 6.0.3
       shallow-clone: 3.0.1
+
+  /clsx@2.1.0:
+    resolution: {integrity: sha512-m3iNNWpd9rl3jvvcBnu70ylMdrXt8Vlq4HYadnU5fwcOtvkSQWPmj7amUcDT2qYI7risszBjI5AUIUox9D16pg==}
+    engines: {node: '>=6'}
+    dev: false
 
   /co@4.6.0:
     resolution: {integrity: sha512-QVb0dM5HvG+uaxitm8wONl7jltx8dqhfU33DcqtOZcLSVIKSDDLDi7+0LbAKiyI8hD9u42m2YxXSkMGWThaecQ==}

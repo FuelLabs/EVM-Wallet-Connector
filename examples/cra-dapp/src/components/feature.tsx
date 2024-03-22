@@ -9,7 +9,7 @@ export default function Feature(props: Props) {
   return (
     <div id="account" {...rest}>
       <h3 className="text-sm font-medium dark:text-zinc-300/70">{title}</h3>
-      <div className="flex items-center justify-between dark:text-zinc-50">
+      <div className="flex items-center justify-between text-lg dark:text-zinc-50">
         {children}
       </div>
     </div>
