@@ -21,7 +21,6 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  @apply text-gray-900 dark:text-gray-50;
 }
 
 .btn {
