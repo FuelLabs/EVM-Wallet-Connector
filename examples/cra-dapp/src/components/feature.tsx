@@ -8,8 +8,10 @@ export default function Feature(props: Props) {
   const { title, children, ...rest } = props;
   return (
     <div id="account" {...rest}>
-      <h3 className="text-sm font-medium dark:text-zinc-300/70">{title}</h3>
-      <div className="flex items-center justify-between text-lg dark:text-zinc-50">
+      <h3 className="mb-1 text-sm font-medium md:mb-0 dark:text-zinc-300/70">
+        {title}
+      </h3>
+      <div className="flex items-center justify-between text-base md:text-lg dark:text-zinc-50">
         {children}
       </div>
     </div>

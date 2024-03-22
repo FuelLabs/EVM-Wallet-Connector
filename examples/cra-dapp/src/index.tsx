@@ -6,6 +6,7 @@ import { EVMWalletConnector } from '@fuels/wallet-connector-evm';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import ScreenSizeIndicator from './components/screensize-indicator';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -21,6 +22,7 @@ root.render(
       }}
     >
       <App />
+      <ScreenSizeIndicator />
     </FuelProvider>
   </React.StrictMode>
 );

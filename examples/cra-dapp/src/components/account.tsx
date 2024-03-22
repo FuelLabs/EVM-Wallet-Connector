@@ -10,8 +10,9 @@ export default function ConnectedAccount(props: Props) {
   const { disconnect } = useDisconnect();
 
   return (
-    <Feature title="Connected account">
-      <code>{truncAddressMiddle(address)}</code>
+    <Feature title="Connected Account">
+      <code className="block md:hidden">{truncAddressMiddle(address, 4)}</code>
+      <code className="hidden md:block">{truncAddressMiddle(address, 8)}</code>
       <Button onClick={() => disconnect()} loadingText="Disconnecting...">
         Disconnect
       </Button>
@@ -19,7 +20,7 @@ export default function ConnectedAccount(props: Props) {
   );
 }
 
-function truncAddressMiddle(address?: string) {
+function truncAddressMiddle(address: string, size: number) {
   if (!address) return '';
-  return `${address.slice(0, 8)}...${address.slice(-8)}`;
+  return `${address.slice(0, size)}...${address.slice(-size)}`;
 }

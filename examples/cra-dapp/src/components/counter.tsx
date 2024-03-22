@@ -35,7 +35,7 @@ export default function ContractCounter(props: Props) {
   if (!shouldShowCounter) return null;
 
   return (
-    <Feature title="Counter contract">
+    <Feature title="Counter Contract">
       <code>{counter}</code>
       <div className="space-x-2">
         <Button

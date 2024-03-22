@@ -17,9 +17,9 @@ export default function App() {
   }, [refetch, isConnected, isFetching]);
 
   return (
-    <main data-theme="dark" className="flex h-screen flex-col dark:bg-black">
+    <main data-theme="dark" className="flex flex-col lg:h-screen">
       {/* Top */}
-      <nav id="nav" className="flex items-center justify-center p-3">
+      <nav id="nav" className="flex items-center justify-center p-3 pb-12">
         <img src="./logo_white.png" alt="Fuel Logo" className="w-[124px]" />
       </nav>
 
@@ -27,10 +27,16 @@ export default function App() {
       <div className="flex h-full min-w-full items-center justify-center dark:text-zinc-50/90">
         <div
           id="container"
-          className="mb-16 w-full max-w-5xl rounded-xl border p-1.5 drop-shadow-xl dark:border-zinc-600/30 dark:bg-gradient-to-t dark:from-zinc-950 dark:to-zinc-900"
+          className="mx-8 mb-24 w-full max-w-5xl rounded-xl border p-1.5 drop-shadow-xl dark:border-zinc-600/30 dark:bg-gradient-to-t dark:from-zinc-950 dark:to-zinc-900"
         >
-          <div id="grid" className="grid grid-cols-7 grid-rows-1 gap-12">
-            <div id="text" className="col-span-3 px-10 py-12">
+          <div
+            id="grid"
+            className="lg:grid lg:grid-cols-7 lg:grid-rows-1 lg:gap-12"
+          >
+            <div
+              id="text"
+              className="col-span-3 px-4 py-8 sm:px-8 sm:py-8 md:px-10 md:py-12"
+            >
               <img src="./metamask.svg" alt="Metamask" className="w-16" />
               <h1 className="pb-1 pt-6 text-3xl font-medium">Metamask Demo</h1>
               <p>
@@ -52,7 +58,7 @@ export default function App() {
 
             <div className="col-span-4 rounded-lg border drop-shadow-xl dark:border-zinc-600/50 dark:bg-gradient-to-t dark:from-zinc-900 dark:to-zinc-900/75">
               {!isConnected && (
-                <section className="flex h-full flex-col items-center justify-center px-10 py-16">
+                <section className="flex h-full flex-col items-center justify-center px-4 py-8 sm:px-8 sm:py-8 md:px-10 md:py-12">
                   <Button
                     onClick={connect}
                     loading={isConnecting}
@@ -64,7 +70,7 @@ export default function App() {
               )}
 
               {isConnected && (
-                <section className="flex h-full flex-col justify-center space-y-6 px-10 py-16">
+                <section className="flex h-full flex-col justify-center space-y-6 px-4 py-8 sm:px-8 sm:py-8 md:px-10 md:py-12">
                   <Account address={accounts[0]} />
                   <Balance address={accounts[0]} />
                   <Counter address={accounts[0]} />
@@ -77,16 +83,4 @@ export default function App() {
       </div>
     </main>
   );
-}
-
-{
-  /* <div className="mt-10 text-center text-xs dark:text-zinc-400">
-            {isConnected && (
-              <p>
-                The counter contract is deployed to the address below:
-                <br />
-                <code>{COUNTER_CONTRACT_ID}</code>.
-              </p>
-            )}
-          </div> */
 }
