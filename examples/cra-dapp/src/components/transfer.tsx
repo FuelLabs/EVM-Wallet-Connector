@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useWallet, useBalance } from '@fuel-wallet/react';
 import { Address, BaseAssetId } from 'fuels';
 import { DEFAULT_AMOUNT } from './balance';
+import Feature from './feature';
 
 const DEFAULT_ADDRESS = Address.fromRandom().toString();
 
@@ -23,28 +24,25 @@ export default function Transfer(props: Props) {
   }, [refetch]);
 
   return (
-    <div id="transfer">
-      <h3 className="pb-0.5 text-sm font-medium text-gray-400/80">Transfer</h3>
-      <div className="flex items-center justify-between">
-        <input
-          type="text"
-          placeholder="Receiver address"
-          value={receiver}
-          onChange={(e) => setReceiver(e.target.value)}
-          className="mr-6 w-2/3 shrink basis-2/3 p-2 font-mono outline-none dark:bg-gray-900/30 dark:text-gray-50"
-        />
+    <Feature title="Transfer">
+      <input
+        type="text"
+        placeholder="Receiver address"
+        value={receiver}
+        onChange={(e) => setReceiver(e.target.value)}
+        className="-ml-2 mr-2 mt-2 w-2/3 shrink basis-2/3 rounded-md p-2 font-mono outline-none dark:bg-gray-800"
+      />
 
-        <button
-          onClick={handleTransfer}
-          disabled={isLoading || !hasBalance}
-          className="btn btn-primary shrink-0"
-        >
-          {isLoading
-            ? 'Transferring...'
-            : `Transfer ${DEFAULT_AMOUNT.format()} ETH`}
-        </button>
-      </div>
-    </div>
+      <button
+        onClick={handleTransfer}
+        disabled={isLoading || !hasBalance}
+        className="btn btn-primary mt-2 shrink-0"
+      >
+        {isLoading
+          ? 'Transferring...'
+          : `Transfer ${DEFAULT_AMOUNT.format()} ETH`}
+      </button>
+    </Feature>
   );
 
   async function handleTransfer() {

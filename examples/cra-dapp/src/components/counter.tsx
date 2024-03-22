@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useLogEvents } from '../hooks/use-log-events';
 import { CounterContractAbi__factory } from '../contracts';
 import { DEFAULT_AMOUNT } from './balance';
+import Feature from './feature';
 
 export const COUNTER_CONTRACT_ID =
   '0x0a46aafb83b387155222893b52ed12e5a4b9d6cd06770786f2b5e4307a63b65c';
@@ -33,20 +34,16 @@ export default function ContractCounter(props: Props) {
   if (!shouldShowCounter) return null;
 
   return (
-    <div id="counter">
-      <h3 className="text-sm font-medium text-gray-400/80">Counter Contract</h3>
-
-      <div className="flex items-center justify-between">
-        <code>{counter}</code>
-        <button
-          className="btn btn-primary"
-          onClick={() => increment()}
-          disabled={isLoading || !hasBalance}
-        >
-          {isLoading ? 'Incrementing...' : 'Increment '}
-        </button>
-      </div>
-    </div>
+    <Feature title="Counter contract">
+      <code>{counter}</code>
+      <button
+        className="btn btn-primary"
+        onClick={() => increment()}
+        disabled={isLoading || !hasBalance}
+      >
+        {isLoading ? 'Incrementing...' : 'Increment '}
+      </button>
+    </Feature>
   );
 
   async function increment() {
