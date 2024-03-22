@@ -1,7 +1,10 @@
-import { useWallet, useDisconnect } from '@fuel-wallet/react';
+import { useDisconnect } from '@fuel-wallet/react';
 
-export default function ConnectedAccount() {
-  const { wallet } = useWallet();
+type Props = { address: string };
+
+export default function ConnectedAccount(props: Props) {
+  const { address } = props;
+
   const { disconnect } = useDisconnect();
 
   return (
@@ -10,7 +13,7 @@ export default function ConnectedAccount() {
         Connected accounts
       </h3>
       <div className="flex items-center justify-between">
-        <code>{truncAddressMiddle(wallet?.address.toString())}</code>
+        <code>{truncAddressMiddle(address)}</code>
         <button className="btn btn-primary" onClick={() => disconnect()}>
           Disconnect
         </button>

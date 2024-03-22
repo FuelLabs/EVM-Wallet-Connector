@@ -4,19 +4,24 @@ import {
   useConnectUI,
   useIsConnected
 } from '@fuel-wallet/react';
+import { useEffect } from 'react';
 
 import Counter, { COUNTER_CONTRACT_ID } from './components/counter';
-import ConnectedAccount from './components/account';
+import Account from './components/account';
 import Balance from './components/balance';
 import Transfer from './components/transfer';
 
 export default function App() {
   const { connect, theme, setTheme, isConnecting } = useConnectUI();
   const { disconnect } = useDisconnect();
-  const { isConnected } = useIsConnected();
+  const { isConnected, refetch, isFetching } = useIsConnected();
   const { accounts } = useAccounts();
 
   const lightTheme = theme === 'light';
+
+  useEffect(() => {
+    refetch();
+  }, [refetch, isConnected, isFetching]);
 
   return (
     <main
@@ -65,13 +70,7 @@ export default function App() {
                   <h2 className="mb-4 text-lg font-medium">
                     Test the Metamask connector
                   </h2>
-                  <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                      console.log('connect');
-                      connect();
-                    }}
-                  >
+                  <button className="btn btn-primary" onClick={() => connect()}>
                     {isConnecting ? 'Connecting' : 'Connect Metamask'}
                   </button>
                   {isConnected && (
@@ -82,8 +81,8 @@ export default function App() {
 
               {isConnected && (
                 <section className="space-y-3 p-8">
-                  <ConnectedAccount />
-                  <Balance />
+                  <Account address={accounts[0]} />
+                  <Balance address={accounts[0]} />
                   <Counter address={accounts[0]} />
                   <Transfer address={accounts[0]} />
                 </section>
@@ -103,36 +102,4 @@ export default function App() {
       </div>
     </main>
   );
-}
-
-{
-  /* {isError && <p className="Error">{error?.message}</p>} */
-}
-
-{
-  /* <div className="Info">
-<p>
-  The connected accounts below are the predicate accounts on
-  Fuel for each of the connected EVM wallet accounts.
-</p>
-<p>
-  You can use an EVM wallet account to send transactions from
-  its corresponding predicate account.
-</p>
-<p>
-  Additional accounts can be connected via the EVM wallet
-  extension.
-</p>
-</div> */
-}
-
-{
-  /* {isConnected && (
-                <div className="Accounts">
-                  <h3>Connected accounts</h3>
-                  {accounts?.map((account) => (
-                    <AccountItem key={account} address={account} />
-                  ))}
-                </div>
-              )} */
 }

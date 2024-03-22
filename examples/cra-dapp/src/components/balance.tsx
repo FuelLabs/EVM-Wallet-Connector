@@ -4,11 +4,13 @@ import { useEffect } from 'react';
 
 export const DEFAULT_AMOUNT = bn.parseUnits('0.001');
 
-export default function Balance() {
-  const { wallet, refetch } = useWallet();
-  const { balance } = useBalance({
-    address: wallet?.address.toString()
-  });
+type Props = { address: string };
+
+export default function Balance(props: Props) {
+  const { address } = props;
+
+  const { refetch } = useWallet(address);
+  const { balance } = useBalance({ address });
 
   useEffect(() => {
     const interval = setInterval(() => refetch(), 5000);
@@ -24,7 +26,7 @@ export default function Balance() {
         <code>{balance?.format() || '0'} ETH</code>
         {!hasBalance && (
           <a
-            href={`https://faucet-beta-5.fuel.network/?address=${wallet?.address.toString()}`}
+            href={`https://faucet-beta-5.fuel.network/?address=${address}`}
             target="_blank"
             className="btn btn-primary"
           >

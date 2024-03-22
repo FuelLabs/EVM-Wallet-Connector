@@ -14,7 +14,7 @@ export default function ContractCounter(props: Props) {
 
   const { wallet } = useWallet(address);
 
-  const { balance } = useBalance({ address: wallet?.address.toString() });
+  const { balance } = useBalance({ address });
   const [isLoading, setLoading] = useState(false);
   const [counter, setCounter] = useState(0);
 
