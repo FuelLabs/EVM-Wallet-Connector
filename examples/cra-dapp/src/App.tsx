@@ -12,39 +12,24 @@ import Balance from './components/balance';
 import Transfer from './components/transfer';
 
 export default function App() {
-  const { connect, theme, setTheme, isConnecting } = useConnectUI();
+  const { connect, isConnecting } = useConnectUI();
   const { disconnect } = useDisconnect();
   const { isConnected, refetch, isFetching } = useIsConnected();
   const { accounts } = useAccounts();
-
-  const lightTheme = theme === 'light';
 
   useEffect(() => {
     refetch();
   }, [refetch, isConnected, isFetching]);
 
   return (
-    <main
-      data-theme={theme}
-      className="flex h-screen flex-col bg-gray-50 dark:bg-gray-900"
-    >
+    <main data-theme="dark" className="flex h-screen flex-col dark:bg-black">
       {/* Top */}
-      <nav id="nav" className="flex items-center justify-between px-12 py-6">
-        <img
-          src={lightTheme ? './logo_black.png' : './logo_white.png'}
-          alt="Fuel Logo"
-          className="w-32"
-        />
-        <button
-          onClick={() => setTheme(lightTheme ? 'dark' : 'light')}
-          className="size-12 rounded-full bg-gray-100 dark:bg-gray-800"
-        >
-          {lightTheme ? '🌙' : '☀️'}
-        </button>
+      <nav id="nav" className="flex items-center justify-center p-3">
+        <img src="./logo_white.png" alt="Fuel Logo" className="w-32" />
       </nav>
 
       {/* Main */}
-      <div className="flex h-full min-w-full items-center justify-center text-gray-900 dark:text-gray-50">
+      <div className="flex h-full min-w-full items-center justify-center dark:text-gray-50">
         <div id="container" className="w-[56rem]">
           <div id="grid" className="grid grid-cols-2 grid-rows-1">
             <div id="text" className="p-8 pr-16">
@@ -64,7 +49,7 @@ export default function App() {
               </a>
             </div>
 
-            <div className="rounded bg-white shadow-sm dark:bg-gray-800">
+            <div className="rounded shadow-sm dark:bg-gray-800">
               {!isConnected && (
                 <section className="flex h-full flex-col items-center justify-center p-8">
                   <h2 className="mb-4 text-lg font-medium">
@@ -89,7 +74,7 @@ export default function App() {
               )}
             </div>
           </div>
-          <div className="mt-10 text-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-10 text-center text-xs dark:text-gray-400">
             {isConnected && (
               <p>
                 The counter contract is deployed to the address below:

@@ -31,7 +31,7 @@ export default function Transfer(props: Props) {
           placeholder="Receiver address"
           value={receiver}
           onChange={(e) => setReceiver(e.target.value)}
-          className="mr-6 w-2/3 shrink basis-2/3 bg-gray-50 p-2 font-mono outline-none dark:bg-gray-900/30 dark:text-gray-50"
+          className="mr-6 w-2/3 shrink basis-2/3 p-2 font-mono outline-none dark:bg-gray-900/30 dark:text-gray-50"
         />
 
         <button
