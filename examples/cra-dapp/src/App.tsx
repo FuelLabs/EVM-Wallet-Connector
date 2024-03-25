@@ -38,7 +38,7 @@ export default function App() {
           </a>
         </nav>
 
-        <div className="rounded-xl border p-1.5 drop-shadow-xl dark:border-zinc-600/30 dark:bg-gradient-to-t dark:from-zinc-950 dark:to-zinc-900">
+        <div className="grain rounded-xl border p-1.5 drop-shadow-xl dark:border-zinc-600/30">
           <div
             id="grid"
             className="lg:grid lg:grid-cols-7 lg:grid-rows-1 lg:gap-12"
