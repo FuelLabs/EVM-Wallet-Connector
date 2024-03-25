@@ -65,7 +65,6 @@ export default function App() {
                 </a>
               </div>
 
-              {/* rounded-lg border drop-shadow-xl dark:border-zinc-600/50 dark:bg-gradient-to-t dark:from-zinc-900 dark:to-zinc-900/75 */}
               <div className="col-span-4">
                 <div className="gradient-border h-full rounded-xl bg-gradient-to-b from-zinc-900 to-zinc-950/80">
                   {!isConnected && (
@@ -80,7 +79,7 @@ export default function App() {
                     </section>
                   )}
 
-                  {isConnected && (
+                  {isConnected && accounts[0] && (
                     <section className="flex h-full flex-col justify-center space-y-6 px-4 py-8 sm:px-8 sm:py-8 md:px-10 md:py-12">
                       <Account address={accounts[0]} />
                       <Balance address={accounts[0]} />

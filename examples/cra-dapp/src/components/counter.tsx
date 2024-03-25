@@ -1,5 +1,5 @@
 import { useBalance, useWallet } from '@fuel-wallet/react';
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLogEvents } from '../hooks/use-log-events';
 import { CounterContractAbi__factory } from '../contracts';
 import { DEFAULT_AMOUNT } from './balance';
@@ -98,12 +98,4 @@ export default function ContractCounter(props: Props) {
       console.error(error);
     }
   }
-}
-
-{
-  /* <p className="mt-2 text-sm text-zinc-400/80">
-        The counter contract is deployed to:
-        <br />
-        <code className="text-xs">{COUNTER_CONTRACT_ID}</code>.
-      </p> */
 }
