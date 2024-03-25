@@ -31,8 +31,8 @@ export default function App() {
           </a>
         </nav>
 
-        <div className="gradient-border rounded-xl">
-          <div className="grain rounded-xl p-1.5 drop-shadow-xl">
+        <div className="gradient-border rounded-2xl">
+          <div className="grain rounded-2xl p-1.5 drop-shadow-xl">
             <div
               id="grid"
               className="lg:grid lg:grid-cols-7 lg:grid-rows-1 lg:gap-12"
@@ -67,7 +67,7 @@ export default function App() {
 
               {/* rounded-lg border drop-shadow-xl dark:border-zinc-600/50 dark:bg-gradient-to-t dark:from-zinc-900 dark:to-zinc-900/75 */}
               <div className="col-span-4">
-                <div className="gradient-border h-full rounded-lg bg-gradient-to-b from-zinc-900 to-zinc-950/70">
+                <div className="gradient-border h-full rounded-xl bg-gradient-to-b from-zinc-900 to-zinc-950/60">
                   {!isConnected && (
                     <section className="flex h-full flex-col items-center justify-center px-4 py-8 sm:px-8 sm:py-8 md:px-10 md:py-12">
                       <Button
