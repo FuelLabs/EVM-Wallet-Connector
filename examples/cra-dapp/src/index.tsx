@@ -2,10 +2,12 @@ import { FuelProvider } from '@fuel-wallet/react';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { EVMWalletConnector } from '@fuels/wallet-connector-evm';
+import * as Toast from '@radix-ui/react-toast';
 
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import ScreenSizeIndicator from './components/screensize-indicator';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -20,7 +22,14 @@ root.render(
         connectors: [new EVMWalletConnector()]
       }}
     >
-      <App />
+      <Toast.Provider>
+        <App />
+        <Toast.Viewport
+          id="toast-viewport"
+          className="fixed bottom-0 right-0 z-[100] m-0 flex w-[420px] max-w-[100vw] list-none flex-col gap-[10px] p-[var(--viewport-padding)] outline-none [--viewport-padding:_25px]"
+        />
+      </Toast.Provider>
+      <ScreenSizeIndicator />
     </FuelProvider>
   </React.StrictMode>
 );
