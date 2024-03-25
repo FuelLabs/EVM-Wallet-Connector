@@ -31,13 +31,13 @@ export default function Transfer(props: Props) {
         placeholder="Receiver address"
         value={receiver}
         onChange={(e) => setReceiver(e.target.value)}
-        className="-ml-2 mr-2 mt-2 w-2/3 shrink basis-2/3 rounded-md border border-zinc-500/25 p-2 font-mono outline-none dark:bg-zinc-900"
+        className="-ml-1 mr-2 mt-1 w-2/3 shrink basis-2/3 rounded-lg border border-zinc-500/25 p-1 font-mono outline-none md:-ml-2 md:mt-2 md:p-2 dark:bg-transparent"
       />
 
       <Button
         onClick={handleTransfer}
         disabled={isLoading || !hasBalance}
-        className="mt-2 shrink-0"
+        className="mt-1 shrink-0 md:mt-2"
         loading={isLoading}
         loadingText="Transferring..."
       >
