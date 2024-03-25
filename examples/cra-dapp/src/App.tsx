@@ -33,7 +33,9 @@ export default function App() {
           id="nav"
           className="flex items-center justify-center py-6 lg:pb-10 lg:pt-0"
         >
-          <img src="./logo_white.png" alt="Fuel Logo" className="w-[124px]" />
+          <a href="https://fuel.network/" target="_blank">
+            <img src="./logo_white.png" alt="Fuel Logo" className="w-[124px]" />
+          </a>
         </nav>
 
         <div className="rounded-xl border p-1.5 drop-shadow-xl dark:border-zinc-600/30 dark:bg-gradient-to-t dark:from-zinc-950 dark:to-zinc-900">
@@ -51,14 +53,15 @@ export default function App() {
                 Fuel enables developers to build integrations with any wallet.
               </p>
 
-              <ul className="list-inside list-disc pt-10">
+              <ul className="list-inside list-disc pt-8">
                 <li>Reduce friction for users</li>
                 <li>Build using any signature scheme</li>
                 <li>Use predicates, a new type of stateless smart contract</li>
               </ul>
               <a
-                href="#"
-                className="block pt-2 text-green-500/80 transition-colors hover:text-green-500"
+                href="https://github.com/FuelLabs/EVM-Wallet-Connector"
+                target="_blank"
+                className="block pt-4 text-green-500/80 transition-colors hover:text-green-500"
               >
                 Build your own wallet integration
               </a>
