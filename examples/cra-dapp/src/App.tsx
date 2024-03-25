@@ -1,7 +1,7 @@
 import { useAccounts, useConnectUI, useIsConnected } from '@fuel-wallet/react';
 import { useEffect } from 'react';
 
-import Counter, { COUNTER_CONTRACT_ID } from './components/counter';
+import Counter from './components/counter';
 import Account from './components/account';
 import Balance from './components/balance';
 import Transfer from './components/transfer';
@@ -17,18 +17,26 @@ export default function App() {
   }, [refetch, isConnected, isFetching]);
 
   return (
-    <main data-theme="dark" className="flex flex-col lg:h-screen">
+    <main
+      data-theme="dark"
+      className="flex items-center justify-center lg:h-screen dark:text-zinc-50/90"
+    >
       {/* Top */}
-      <nav id="nav" className="flex items-center justify-center p-3 pb-12">
+      {/* <nav id="nav" className="flex items-center justify-center px-3 py-12">
         <img src="./logo_white.png" alt="Fuel Logo" className="w-[124px]" />
-      </nav>
+      </nav> */}
 
       {/* Main */}
-      <div className="flex h-full min-w-full items-center justify-center dark:text-zinc-50/90">
-        <div
-          id="container"
-          className="mx-8 mb-24 w-full max-w-5xl rounded-xl border p-1.5 drop-shadow-xl dark:border-zinc-600/30 dark:bg-gradient-to-t dark:from-zinc-950 dark:to-zinc-900"
+      {/* <div className="flex h-full min-w-full "> */}
+      <div id="container" className="mx-8 mb-24 w-full max-w-5xl">
+        <nav
+          id="nav"
+          className="flex items-center justify-center py-6 md:pb-10 md:pt-0"
         >
+          <img src="./logo_white.png" alt="Fuel Logo" className="w-[124px]" />
+        </nav>
+
+        <div className="rounded-xl border p-1.5 drop-shadow-xl dark:border-zinc-600/30 dark:bg-gradient-to-t dark:from-zinc-950 dark:to-zinc-900">
           <div
             id="grid"
             className="lg:grid lg:grid-cols-7 lg:grid-rows-1 lg:gap-12"
@@ -81,6 +89,7 @@ export default function App() {
           </div>
         </div>
       </div>
+      {/* </div> */}
     </main>
   );
 }
