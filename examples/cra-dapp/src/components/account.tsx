@@ -10,7 +10,7 @@ export default function ConnectedAccount(props: Props) {
   const { disconnect } = useDisconnect();
 
   return (
-    <Feature title="Connected Account">
+    <Feature title="Your Fuel Address">
       <code className="block md:hidden">{truncAddressMiddle(address, 4)}</code>
       <code className="hidden md:block">{truncAddressMiddle(address, 8)}</code>
       <Button onClick={() => disconnect()} loadingText="Disconnecting...">
