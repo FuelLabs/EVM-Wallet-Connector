@@ -14,10 +14,7 @@ export default function Notification(props: Props) {
   return (
     <React.Fragment>
       <Toast.Root
-        className={clsx(
-          'data-[state=open]:animate-slideIn data-[state=closed]:animate-hide data-[swipe=end]:animate-swipeOut gradient-border items-center gap-x-4 rounded-lg bg-zinc-900 data-[swipe=cancel]:translate-x-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:transition-[transform_200ms_ease-out]'
-          // type == 'success' && 'border border-green-800'
-        )}
+        className="data-[state=open]:animate-slideIn data-[state=closed]:animate-hide data-[swipe=end]:animate-swipeOut gradient-border items-center gap-x-4 rounded-lg bg-zinc-900 data-[swipe=cancel]:translate-x-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=cancel]:transition-[transform_200ms_ease-out]"
         open={open}
         onOpenChange={setOpen}
         duration={duration || 10_000}
@@ -42,14 +39,7 @@ export default function Notification(props: Props) {
               </button>
             </Toast.Close>
           </div>
-          <Toast.Description
-            // asChild
-            className={clsx(
-              'text-[15px] text-zinc-50/90'
-              // type == 'success' && 'text-green-500',
-              // type == 'error' && 'text-red-800'
-            )}
-          >
+          <Toast.Description className={clsx('text-[15px] text-zinc-50/90')}>
             {children}
           </Toast.Description>
         </div>
