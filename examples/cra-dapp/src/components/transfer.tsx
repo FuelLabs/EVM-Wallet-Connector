@@ -4,6 +4,7 @@ import { Address, BaseAssetId } from 'fuels';
 import { DEFAULT_AMOUNT } from './balance';
 import Feature from './feature';
 import Button from './button';
+import Notification, { Props as NotificationProps } from './notification';
 
 const DEFAULT_ADDRESS = Address.fromRandom().toString();
 
@@ -14,13 +15,17 @@ export default function Transfer(props: Props) {
 
   const [receiver, setReceiver] = useState(DEFAULT_ADDRESS);
   const [isLoading, setLoading] = useState(false);
+  const [toast, setToast] = useState<Omit<NotificationProps, 'setOpen'>>({
+    open: false
+  });
+
   const { balance, refetch } = useBalance({ address });
   const { wallet } = useWallet(address);
 
   const hasBalance = balance && balance.gte(DEFAULT_AMOUNT);
 
   useEffect(() => {
-    const interval = setInterval(() => refetch(), 5000);
+    const interval = setInterval(refetch, 1000);
     return () => clearInterval(interval);
   }, [refetch]);
 
@@ -43,6 +48,10 @@ export default function Transfer(props: Props) {
       >
         {`Transfer ${DEFAULT_AMOUNT.format()} ETH`}
       </Button>
+      <Notification
+        setOpen={() => setToast({ ...toast, open: false })}
+        {...toast}
+      />
     </Feature>
   );
 
@@ -62,8 +71,26 @@ export default function Transfer(props: Props) {
       );
       const result = await resp?.waitForResult();
       console.log(result?.status);
+
+      setToast({
+        open: true,
+        type: 'success',
+        children: (
+          <p>
+            Transfer successful! View it on the{' '}
+            <a href="#link-to-block-explorer" className="underline">
+              block explorer
+            </a>
+          </p>
+        )
+      });
     } catch (err: any) {
-      alert(err.message);
+      console.error(err.message);
+      setToast({
+        open: true,
+        type: 'error',
+        children: `The transfer could not be processed: ${err.message.substring(0, 32)}...`
+      });
     } finally {
       setLoading(false);
     }

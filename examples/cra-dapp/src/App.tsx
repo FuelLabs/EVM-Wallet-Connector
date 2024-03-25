@@ -9,12 +9,13 @@ import Button from './components/button';
 
 export default function App() {
   const { connect, isConnecting } = useConnectUI();
-  const { isConnected, refetch, isFetching } = useIsConnected();
+  const { isConnected, refetch } = useIsConnected();
   const { accounts } = useAccounts();
 
   useEffect(() => {
-    refetch();
-  }, [refetch, isConnected, isFetching]);
+    const id = setInterval(refetch, 800);
+    return () => clearInterval(id);
+  }, [refetch]);
 
   return (
     <main
@@ -79,7 +80,7 @@ export default function App() {
                     </section>
                   )}
 
-                  {isConnected && accounts[0] && (
+                  {isConnected && (
                     <section className="flex h-full flex-col justify-center space-y-6 px-4 py-8 sm:px-8 sm:py-8 md:px-10 md:py-12">
                       <Account address={accounts[0]} />
                       <Balance address={accounts[0]} />

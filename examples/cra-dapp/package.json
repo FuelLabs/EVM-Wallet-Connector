@@ -6,6 +6,7 @@
     "@fuel-wallet/react": "0.15.2",
     "@fuel-wallet/sdk": "0.15.2",
     "@fuels/wallet-connector-evm": "workspace:*",
+    "@radix-ui/react-toast": "1.1.5",
     "@types/node": "^16.18.68",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",

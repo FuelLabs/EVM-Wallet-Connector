@@ -5,6 +5,7 @@ import { CounterContractAbi__factory } from '../contracts';
 import { DEFAULT_AMOUNT } from './balance';
 import Feature from './feature';
 import Button from './button';
+import Notification, { Props as NotificationProps } from './notification';
 
 export const COUNTER_CONTRACT_ID =
   '0x0a46aafb83b387155222893b52ed12e5a4b9d6cd06770786f2b5e4307a63b65c';
@@ -15,8 +16,11 @@ export default function ContractCounter(props: Props) {
   const { address } = props;
 
   const { wallet } = useWallet(address);
-
   const { balance } = useBalance({ address });
+  const [toast, setToast] = useState<Omit<NotificationProps, 'setOpen'>>({
+    open: false
+  });
+
   const [isLoading, setLoading] = useState(false);
   const [counter, setCounter] = useState(0);
 
@@ -54,6 +58,10 @@ export default function ContractCounter(props: Props) {
         >
           Increment
         </Button>
+        <Notification
+          setOpen={() => setToast({ ...toast, open: false })}
+          {...toast}
+        />
       </div>
     </Feature>
   );
@@ -66,12 +74,23 @@ export default function ContractCounter(props: Props) {
         wallet
       );
       try {
-        await contract.functions
+        const result = await contract.functions
           .increment()
           .txParams({ gasPrice: 1, gasLimit: 100_000 })
           .call();
-      } catch (err) {
-        console.log('error sending transaction...', err);
+        setCounter((prev) => prev + 1);
+        setToast({
+          open: true,
+          type: 'success',
+          children: 'Counter incremented!'
+        });
+      } catch (err: any) {
+        console.error('error sending transaction...', err.message);
+        setToast({
+          open: true,
+          type: 'error',
+          children: `The counter could not be incremented: ${err.message.substring(0, 32)}...`
+        });
       } finally {
         setLoading(false);
       }
@@ -88,10 +107,7 @@ export default function ContractCounter(props: Props) {
     try {
       const { value } = await counterContract.functions
         .count()
-        .txParams({
-          gasPrice: 1,
-          gasLimit: 100_000
-        })
+        .txParams({ gasPrice: 1, gasLimit: 100_000 })
         .simulate();
       setCounter(value.toNumber());
     } catch (error) {
