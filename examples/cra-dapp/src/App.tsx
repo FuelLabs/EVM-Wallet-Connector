@@ -28,10 +28,10 @@ export default function App() {
 
       {/* Main */}
       {/* <div className="flex h-full min-w-full "> */}
-      <div id="container" className="mx-8 mb-24 w-full max-w-5xl">
+      <div id="container" className="mx-8 mb-32 w-full max-w-5xl lg:mb-0">
         <nav
           id="nav"
-          className="flex items-center justify-center py-6 md:pb-10 md:pt-0"
+          className="flex items-center justify-center py-6 lg:pb-10 lg:pt-0"
         >
           <img src="./logo_white.png" alt="Fuel Logo" className="w-[124px]" />
         </nav>
