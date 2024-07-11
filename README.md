@@ -1,3 +1,6 @@
+> [!WARNING]
+> This project has been merged into [Fuel Connectors](https://github.com/FuelLabs/fuel-connectors)
+
 # Fuel Wallet Connector for MetaMask
 
 This Connector is part of the effort to enable users to use their current **MetaMask Wallet**,
