@@ -6,9 +6,11 @@
     "@fuel-wallet/react": "0.15.2",
     "@fuel-wallet/sdk": "0.15.2",
     "@fuels/wallet-connector-evm": "workspace:*",
+    "@radix-ui/react-toast": "1.1.5",
     "@types/node": "^16.18.68",
     "@types/react": "^18.2.45",
     "@types/react-dom": "^18.2.18",
+    "clsx": "2.1.0",
     "crypto-browserify": "^3.12.0",
     "fuels": "0.74.0",
     "react": "^18.2.0",
@@ -34,5 +36,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "prettier": "^3.1.1",
+    "prettier-plugin-tailwindcss": "0.5.12",
+    "tailwindcss": "3.4.1"
   }
 }
